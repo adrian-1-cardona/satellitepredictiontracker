@@ -1,0 +1,57 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Python: FastAPI",
+      "type": "python",
+      "request": "launch",
+      "module": "uvicorn",
+      "args": [
+        "app.main:app",
+        "--reload",
+        "--host=0.0.0.0",
+        "--port=8000"
+      ],
+      "jinja": true,
+      "justMyCode": false,
+      "console": "integratedTerminal",
+      "env": {
+        "DATABASE_URL": "postgresql://tracker:tracker_dev_password@localhost:5432/satellite_tracker",
+        "SECRET_KEY": "dev-secret-key-change-in-production",
+        "LOG_LEVEL": "DEBUG"
+      }
+    },
+    {
+      "name": "Python: Pytest",
+      "type": "python",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "tests/",
+        "-v",
+        "--tb=short"
+      ],
+      "justMyCode": false,
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Python: Celery Worker",
+      "type": "python",
+      "request": "launch",
+      "module": "celery",
+      "args": [
+        "-A",
+        "app.tasks",
+        "celery_app",
+        "worker",
+        "--loglevel=debug"
+      ],
+      "env": {
+        "DATABASE_URL": "postgresql://tracker:tracker_dev_password@localhost:5432/satellite_tracker",
+        "REDIS_URL": "redis://localhost:6379",
+        "CELERY_BROKER_URL": "redis://localhost:6379/0"
+      },
+      "console": "integratedTerminal"
+    }
+  ]
+}
