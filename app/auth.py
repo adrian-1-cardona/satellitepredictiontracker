@@ -49,6 +49,7 @@ def create_access_token(user: User, expires_delta: timedelta | None = None) -> s
         "email": user.email,
         "is_admin": user.is_admin,
         "type": "access",
+        "jti": secrets.token_urlsafe(16),
         "exp": expires,
         "iat": datetime.now(timezone.utc),
     }
@@ -118,4 +119,3 @@ def consume_refresh_token(db: Session, raw_token: str) -> User | None:
     db.commit()
     db.refresh(record)
     return db.get(User, record.user_id)
-
