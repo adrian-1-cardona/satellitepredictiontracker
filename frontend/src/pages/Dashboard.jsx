@@ -1,8 +1,11 @@
 import { Crosshair, Loader2, LocateFixed, MapPinned, Plus } from "lucide-react";
+import { motion } from "framer-motion";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createLocation, fetchLocations, getErrorMessage } from "../api/client.js";
+import GlobePanel from "../components/dashboard/GlobePanel.jsx";
 import LocationList from "../components/LocationList.jsx";
 import Map from "../components/Map.jsx";
+import SpaceLayout from "../components/layouts/SpaceLayout.jsx";
 
 const initialLocationForm = {
   name: "",
@@ -126,7 +129,8 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="page-shell">
+    <SpaceLayout densityVariant="normal">
+      <div className="page-shell dashboard-page">
       <section className="section-heading">
         <div>
           <p className="eyebrow">Observation Network</p>
@@ -135,17 +139,24 @@ export default function Dashboard() {
         </div>
       </section>
 
-      {error && <div className="message error">{error}</div>}
-      {success && <div className="message success">{success}</div>}
+      {error && <div className="message error" role="alert">{error}</div>}
+      {success && <div className="message success" role="status">{success}</div>}
 
-      <div className="dashboard-grid">
-        <Map
-          draftLocation={draftLocation}
-          focusLocation={focusLocation}
-          locations={locations}
-          onMapClick={handleMapClick}
-          selectedLocationId={selectedLocation?.id}
-        />
+      <motion.div
+        className="dashboard-grid"
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+      >
+        <GlobePanel>
+          <Map
+            draftLocation={draftLocation}
+            focusLocation={focusLocation}
+            locations={locations}
+            onMapClick={handleMapClick}
+            selectedLocationId={selectedLocation?.id}
+          />
+        </GlobePanel>
 
         <aside className="control-panel">
           <section className="panel-section">
@@ -254,7 +265,8 @@ export default function Dashboard() {
             </span>
           </section>
         </aside>
+      </motion.div>
       </div>
-    </div>
+    </SpaceLayout>
   );
 }

@@ -49,7 +49,7 @@ function AppShell({ children }) {
           </button>
         </div>
       </header>
-      <main>{children}</main>
+      <main className="app-main">{children}</main>
     </div>
   );
 }

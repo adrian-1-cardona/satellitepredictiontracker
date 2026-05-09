@@ -1,4 +1,5 @@
 import { LogIn } from "lucide-react";
+import { motion } from "framer-motion";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getErrorMessage } from "../api/client.js";
@@ -31,13 +32,19 @@ export default function LoginForm() {
   }
 
   return (
-    <form className="auth-form" onSubmit={handleSubmit}>
+    <motion.form
+      className="auth-form"
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+      onSubmit={handleSubmit}
+    >
       <div className="form-heading">
-        <h2>Login</h2>
+        <h2>Mission Login</h2>
         <p>Resume watching passes from your saved locations.</p>
       </div>
 
-      {error && <div className="message error">{error}</div>}
+      {error && <div className="message error" role="alert">{error}</div>}
 
       <label>
         <span>Email</span>
@@ -68,8 +75,8 @@ export default function LoginForm() {
 
       <button className="primary-button" disabled={loading} type="submit">
         <LogIn size={18} aria-hidden="true" />
-        <span>{loading ? "Signing in..." : "Login"}</span>
+        <span>{loading ? "Signing in..." : "Access Dashboard"}</span>
       </button>
-    </form>
+    </motion.form>
   );
 }

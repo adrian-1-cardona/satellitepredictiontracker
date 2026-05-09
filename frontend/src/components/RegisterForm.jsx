@@ -1,4 +1,5 @@
 import { UserPlus } from "lucide-react";
+import { motion } from "framer-motion";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getErrorMessage } from "../api/client.js";
@@ -31,13 +32,19 @@ export default function RegisterForm() {
   }
 
   return (
-    <form className="auth-form" onSubmit={handleSubmit}>
+    <motion.form
+      className="auth-form"
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.45, delay: 0.08, ease: [0.22, 1, 0.36, 1] }}
+      onSubmit={handleSubmit}
+    >
       <div className="form-heading">
         <h2>Create Account</h2>
         <p>Save observing sites and build alert rules.</p>
       </div>
 
-      {error && <div className="message error">{error}</div>}
+      {error && <div className="message error" role="alert">{error}</div>}
 
       <label>
         <span>Email</span>
@@ -70,6 +77,6 @@ export default function RegisterForm() {
         <UserPlus size={18} aria-hidden="true" />
         <span>{loading ? "Creating..." : "Sign Up"}</span>
       </button>
-    </form>
+    </motion.form>
   );
 }
