@@ -9,7 +9,7 @@ import {
   EllipsoidTerrainProvider,
   HorizontalOrigin,
   Math as CesiumMath,
-  OpenStreetMapImageryProvider,
+  ArcGisMapServerImageryProvider,
   ScreenSpaceEventHandler,
   ScreenSpaceEventType,
   VerticalOrigin,
@@ -56,9 +56,8 @@ export default function Map({
       shouldAnimate: true,
       timeline: false,
       terrainProvider: new EllipsoidTerrainProvider(),
-      imageryProvider: new OpenStreetMapImageryProvider({
-        url: "https://tile.openstreetmap.org/",
-        credit: "OpenStreetMap contributors",
+      imageryProvider: new ArcGisMapServerImageryProvider({
+        url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer",
       }),
     });
 
