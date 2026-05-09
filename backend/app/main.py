@@ -20,7 +20,16 @@ configure_logging(settings.log_level)
 REQUEST_COUNT = Counter("http_requests_total", "Total HTTP requests", ["method", "path", "status"])
 REQUEST_LATENCY = Histogram("http_request_duration_seconds", "HTTP request latency", ["method", "path"])
 
-app = FastAPI(title=settings.app_name, version=settings.app_version, debug=settings.debug)
+app = FastAPI(
+    title=settings.app_name,
+    version=settings.app_version,
+    debug=settings.debug,
+    # Disable public OpenAPI surface to avoid advertising the API to
+    # unauthenticated visitors. Health, ready, metrics, and /api/v1/* stay live.
+    docs_url=None,
+    redoc_url=None,
+    openapi_url=None,
+)
 app.add_exception_handler(SatelliteTrackerError, satellite_tracker_exception_handler)
 app.add_middleware(
     CORSMiddleware,
