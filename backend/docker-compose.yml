@@ -29,6 +29,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.api
+    env_file:
+      - ../.env
     environment:
       DATABASE_URL: postgresql+psycopg2://tracker:tracker_dev_password@postgres:5432/satellite_tracker
       REDIS_URL: redis://redis:6379
@@ -44,13 +46,15 @@ services:
       redis:
         condition: service_healthy
     volumes:
-      - ./data:/app/data
+      - ../data:/app/data
 
   celery_worker:
     build:
       context: .
       dockerfile: Dockerfile.api
     command: celery -A app.tasks:celery_app worker --loglevel=info
+    env_file:
+      - ../.env
     environment:
       DATABASE_URL: postgresql+psycopg2://tracker:tracker_dev_password@postgres:5432/satellite_tracker
       REDIS_URL: redis://redis:6379
@@ -64,13 +68,15 @@ services:
       redis:
         condition: service_healthy
     volumes:
-      - ./data:/app/data
+      - ../data:/app/data
 
   celery_beat:
     build:
       context: .
       dockerfile: Dockerfile.api
     command: celery -A app.tasks:celery_app beat --loglevel=info
+    env_file:
+      - ../.env
     environment:
       DATABASE_URL: postgresql+psycopg2://tracker:tracker_dev_password@postgres:5432/satellite_tracker
       REDIS_URL: redis://redis:6379
@@ -84,7 +90,7 @@ services:
       redis:
         condition: service_healthy
     volumes:
-      - ./data:/app/data
+      - ../data:/app/data
 
   pgadmin:
     image: dpage/pgadmin4:8

@@ -181,3 +181,55 @@ The test suite uses SQLite fixtures for speed and includes:
 - Email/SMS/push delivery is simulated in v1 by writing alert history rows.
 - For local work, use a virtual environment to avoid dependency conflicts with globally installed Python packages.
 
+
+## Verification Pathway
+
+After the backend/frontend restructure, the backend lives under `backend/` and `.env` / `.env.example` stay at the workspace root. Use the steps below to confirm every service is up after a fresh `docker compose up`.
+
+1. From the `backend/` directory, start the stack using the workspace-root env file:
+
+   ```bash
+   cd backend
+   docker compose --env-file ../.env up --build
+   ```
+
+2. Once the `api` service reports healthy, verify the three system endpoints:
+
+   - Health: `http://localhost:8000/health`
+   - Readiness: `http://localhost:8000/ready`
+   - Metrics: `http://localhost:8000/metrics`
+
+3. Curl the health endpoint and confirm the JSON shape has `status`, `version`, and `timestamp` keys:
+
+   ```bash
+   curl http://localhost:8000/health
+   ```
+
+   Expected response (values will vary):
+
+   ```json
+   {
+     "status": "healthy",
+     "version": "1.0.0",
+     "timestamp": "2024-01-01T00:00:00+00:00"
+   }
+   ```
+
+4. Readiness and metrics spot checks:
+
+   ```bash
+   curl http://localhost:8000/ready
+   curl http://localhost:8000/metrics
+   ```
+
+   `/ready` returns `{ "ready": true, ... }` when the database check succeeds. `/metrics` returns Prometheus text format.
+
+5. The public OpenAPI surface is intentionally disabled after the restructure. The following endpoints are expected to return HTTP 404:
+
+   ```bash
+   curl -i http://localhost:8000/docs        # HTTP/1.1 404
+   curl -i http://localhost:8000/redoc       # HTTP/1.1 404
+   curl -i http://localhost:8000/openapi.json # HTTP/1.1 404
+   ```
+
+   `GET /docs`, `GET /redoc`, and `GET /openapi.json` all respond with HTTP 404 by design so the API surface is not advertised to unauthenticated visitors. Use `curl` or the future frontend under `frontend/` to exercise `/api/v1/*` routes.

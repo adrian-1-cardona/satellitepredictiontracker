@@ -17,3 +17,4 @@ data/*.tle
 
 .DS_Store
 
+backend/.env

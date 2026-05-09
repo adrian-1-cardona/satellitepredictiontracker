@@ -1,0 +1,31 @@
+# Satellite Tracker
+
+This repository is organized into three top-level areas:
+
+- **`backend/`** - FastAPI application, Celery workers, Alembic migrations, tests, and the Docker Compose stack.
+- **`frontend/`** - Placeholder for the future web UI. Currently ships a single `index.html` page.
+- **`docs/`** - Project-level documentation, API overview, and the post-deploy verification pathway.
+
+## Top-Level Layout
+
+```text
+.
+├── backend/        # FastAPI app, Celery, Alembic, Docker Compose
+│   └── BACKEND_SETUP.md
+├── frontend/       # Placeholder UI
+│   └── index.html
+├── docs/           # Project docs and verification pathway
+│   └── README.md
+├── data/           # Runtime TLE cache (mounted into Compose services)
+├── instructions/
+├── .env / .env.example
+└── README.md       # (this file)
+```
+
+## Where to Start
+
+- Running the backend with Docker or locally: see [`backend/BACKEND_SETUP.md`](backend/BACKEND_SETUP.md).
+- Project overview, API list, and verification pathway: see [`docs/README.md`](docs/README.md).
+- Frontend placeholder: open [`frontend/index.html`](frontend/index.html) in a browser.
+
+`.env` and `.env.example` live at the workspace root. Docker Compose and local processes read them from this location (see `backend/BACKEND_SETUP.md` for the exact commands).
