@@ -4,14 +4,17 @@ import {
   Cartesian3,
   Cartesian2,
   Cartographic,
+  buildModuleUrl,
   Color,
   CustomDataSource,
   EllipsoidTerrainProvider,
   HorizontalOrigin,
+  ImageryLayer,
   Math as CesiumMath,
-  ArcGisMapServerImageryProvider,
+  OpenStreetMapImageryProvider,
   ScreenSpaceEventHandler,
   ScreenSpaceEventType,
+  TileMapServiceImageryProvider,
   VerticalOrigin,
   Viewer,
 } from "cesium";
@@ -45,6 +48,11 @@ export default function Map({
 
     const viewer = new Viewer(containerRef.current, {
       animation: false,
+      baseLayer: ImageryLayer.fromProviderAsync(
+        TileMapServiceImageryProvider.fromUrl(
+          buildModuleUrl("Assets/Textures/NaturalEarthII"),
+        ),
+      ),
       baseLayerPicker: false,
       fullscreenButton: false,
       geocoder: false,
@@ -56,10 +64,15 @@ export default function Map({
       shouldAnimate: true,
       timeline: false,
       terrainProvider: new EllipsoidTerrainProvider(),
-      imageryProvider: new ArcGisMapServerImageryProvider({
-        url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer",
-      }),
     });
+
+    const osmLayer = viewer.imageryLayers.addImageryProvider(
+      new OpenStreetMapImageryProvider({
+        url: "https://tile.openstreetmap.org/",
+        credit: "OpenStreetMap contributors",
+      }),
+    );
+    osmLayer.alpha = 0.85;
 
     viewer.scene.globe.enableLighting = true;
     viewer.scene.screenSpaceCameraController.minimumZoomDistance = 1000;
