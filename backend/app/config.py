@@ -48,6 +48,7 @@ class Settings(BaseSettings):
         return self.celery_result_backend or f"{self.redis_url}/1"
 
 
+
 @lru_cache
 def get_settings() -> Settings:
     return Settings()
