@@ -1,5 +1,29 @@
 # Satellite Tracker
 
+## Quick Start
+
+### Prerequisites
+- Node.js 22+ (for frontend)
+- Docker & Docker Compose (for backend)
+
+### Setup
+
+1. **Copy environment file:**
+   ```bash
+   cp .env.example .env
+2. Install frontend dependecies
+cd frontend && npm install && cd ..
+
+3. cd backend && docker compose --env-file ../.env up --build
+IT IS IMPORTANT YOU WAIT FOR THE APPLICATION STARTUP COMPLETE TO COME UP
+
+4. cd frontend && npm run dev
+
+5. Access the App
+Frontend: http://localhost:3000
+API Health: http://localhost:8000/health
+PgAdmin: http://localhost:5050 (admin@tracker.local / admin)
+
 This repository is organized into three top-level areas:
 
 - **`backend/`** - FastAPI application, Celery workers, Alembic migrations, tests, and the Docker Compose stack.
