@@ -1,9 +1,9 @@
-import { Crosshair, Loader2, LocateFixed, MapPinned, Plus } from "lucide-react";
+import { Crosshair, Loader2, RadioTower, Satellite, ShieldCheck, TrendingUp } from "lucide-react";
 import { motion } from "framer-motion";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createLocation, fetchLocations, getErrorMessage } from "../api/client.js";
-import GlobePanel from "../components/dashboard/GlobePanel.jsx";
-import LocationList from "../components/LocationList.jsx";
+import LeftSidebar from "../components/layout/LeftSidebar.jsx";
+import RightPanel from "../components/layout/RightPanel.jsx";
 import Map from "../components/Map.jsx";
 import SpaceLayout from "../components/layouts/SpaceLayout.jsx";
 
@@ -23,6 +23,39 @@ function normalizeDraftLocation(draft) {
   };
 }
 
+const predictions = [
+  {
+    id: "starlink-6079",
+    name: "Starlink-6079",
+    designation: "Starlink",
+    alert: "Close approach review queued",
+    icon: TrendingUp,
+  },
+  {
+    id: "jwst",
+    name: "James Webb Space Telescope",
+    designation: "Observatory",
+    description: "Long-duration observation windows remain nominal.",
+    icon: Satellite,
+    severity: "success",
+  },
+];
+
+const recommendations = [
+  {
+    id: "refresh-pass-windows",
+    name: "Refresh pass windows",
+    metric: "Keep predictions current",
+    icon: RadioTower,
+  },
+  {
+    id: "review-alert-rules",
+    name: "Review alert rules",
+    metric: "2 active monitoring checks",
+    icon: ShieldCheck,
+  },
+];
+
 export default function Dashboard() {
   const [locations, setLocations] = useState([]);
   const [selectedLocationId, setSelectedLocationId] = useState(null);
@@ -38,15 +71,25 @@ export default function Dashboard() {
     [locations, selectedLocationId],
   );
 
-  async function loadLocations() {
+  async function loadLocations(preferredLocationId = selectedLocationId) {
     setLoading(true);
     setError("");
     try {
       const data = await fetchLocations();
       setLocations(data);
-      if (data.length && !selectedLocationId) {
-        setSelectedLocationId(data[0].id);
-        setFocusLocation(data[0]);
+
+      if (!data.length) {
+        setSelectedLocationId(null);
+        setFocusLocation(null);
+        return;
+      }
+
+      const nextLocation =
+        data.find((location) => Number(location.id) === Number(preferredLocationId)) || data[0];
+
+      setSelectedLocationId(nextLocation.id);
+      if (!focusLocation || Number(nextLocation.id) === Number(preferredLocationId)) {
+        setFocusLocation(nextLocation);
       }
     } catch (err) {
       setError(getErrorMessage(err, "Unable to load locations."));
@@ -120,7 +163,7 @@ export default function Dashboard() {
       setSelectedLocationId(created.id);
       setFocusLocation(created);
       setSuccess(`${created.name} was saved. Pass predictions have been queued.`);
-      await loadLocations();
+      await loadLocations(created.id);
     } catch (err) {
       setError(getErrorMessage(err, "Unable to save location."));
     } finally {
@@ -130,143 +173,76 @@ export default function Dashboard() {
 
   return (
     <SpaceLayout densityVariant="normal">
-      <div className="page-shell dashboard-page">
-      <section className="section-heading">
-        <div>
-          <p className="eyebrow">Observation Network</p>
-          <h1>Dashboard</h1>
-          <p>Pin observing sites, center the globe, and open each location for pass predictions.</p>
-        </div>
-      </section>
-
-      {error && <div className="message error" role="alert">{error}</div>}
-      {success && <div className="message success" role="status">{success}</div>}
-
       <motion.div
-        className="dashboard-grid"
+        className="dashboard-layout"
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
       >
-        <GlobePanel>
-          <Map
-            draftLocation={draftLocation}
-            focusLocation={focusLocation}
-            locations={locations}
-            onMapClick={handleMapClick}
-            selectedLocationId={selectedLocation?.id}
-          />
-        </GlobePanel>
+        {(error || success) && (
+          <div className="dashboard-alerts">
+            {error && <div className="message error" role="alert">{error}</div>}
+            {success && <div className="message success" role="status">{success}</div>}
+          </div>
+        )}
 
-        <aside className="control-panel">
-          <section className="panel-section">
-            <div className="section-heading compact">
+        <LeftSidebar
+          loading={loading}
+          locations={locations}
+          onSelectLocation={handleSelectLocation}
+          predictions={predictions}
+          recommendations={recommendations}
+          selectedLocationId={selectedLocationId}
+        />
+
+        <section className="center-globe" aria-label="Interactive satellite tracking workspace">
+          <div className="globe-panel-shell dashboard-globe-shell">
+            <div className="globe-command-bar">
               <div>
-                <h2>Add Location</h2>
-                <p>Use GPS, click the globe, or enter coordinates.</p>
+                <p className="eyebrow">Observation Network</p>
+                <h1>Dashboard</h1>
               </div>
-              <button
-                className="icon-button"
-                onClick={handleUseCurrentLocation}
-                title="Use my current location"
-                type="button"
-              >
-                <LocateFixed size={18} aria-hidden="true" />
-              </button>
+              <div className="status-strip compact">
+                <Crosshair size={17} aria-hidden="true" />
+                <span>
+                  {selectedLocation
+                    ? `Focused on ${selectedLocation.name}.`
+                    : "Choose or create a location to center the map."}
+                </span>
+              </div>
             </div>
 
-            <form className="stacked-form" onSubmit={handleCreateLocation}>
-              <label>
-                <span>Name</span>
-                <input
-                  maxLength="120"
-                  name="name"
-                  onChange={handleFieldChange}
-                  placeholder="Backyard, observatory, campsite"
-                  required
-                  value={draftLocation.name}
-                />
-              </label>
-
-              <div className="form-grid two">
-                <label>
-                  <span>Latitude</span>
-                  <input
-                    max="90"
-                    min="-90"
-                    name="latitude"
-                    onChange={handleFieldChange}
-                    placeholder="40.7128"
-                    required
-                    step="0.000001"
-                    type="number"
-                    value={draftLocation.latitude}
-                  />
-                </label>
-
-                <label>
-                  <span>Longitude</span>
-                  <input
-                    max="180"
-                    min="-180"
-                    name="longitude"
-                    onChange={handleFieldChange}
-                    placeholder="-74.0060"
-                    required
-                    step="0.000001"
-                    type="number"
-                    value={draftLocation.longitude}
-                  />
-                </label>
+            {loading ? (
+              <div className="map-panel map-loading">
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                >
+                  <Loader2 size={46} aria-hidden="true" />
+                </motion.div>
+                <span>Loading saved locations...</span>
               </div>
+            ) : (
+              <Map
+                draftLocation={draftLocation}
+                focusLocation={focusLocation}
+                locations={locations}
+                onMapClick={handleMapClick}
+                selectedLocationId={selectedLocation?.id}
+              />
+            )}
+          </div>
+        </section>
 
-              <label>
-                <span>Elevation (m)</span>
-                <input
-                  max="10000"
-                  min="-500"
-                  name="elevation_m"
-                  onChange={handleFieldChange}
-                  step="1"
-                  type="number"
-                  value={draftLocation.elevation_m}
-                />
-              </label>
-
-              <button className="primary-button" disabled={saving} type="submit">
-                {saving ? <Loader2 size={18} className="spin" aria-hidden="true" /> : <Plus size={18} aria-hidden="true" />}
-                <span>{saving ? "Saving..." : "Add New Location"}</span>
-              </button>
-            </form>
-          </section>
-
-          <section className="panel-section">
-            <div className="section-heading compact">
-              <div>
-                <h2>Saved Locations</h2>
-                <p>{locations.length} location{locations.length === 1 ? "" : "s"} stored.</p>
-              </div>
-              <MapPinned size={20} aria-hidden="true" />
-            </div>
-            <LocationList
-              loading={loading}
-              locations={locations}
-              onSelect={handleSelectLocation}
-              selectedLocationId={selectedLocationId}
-            />
-          </section>
-
-          <section className="panel-section status-strip">
-            <Crosshair size={19} aria-hidden="true" />
-            <span>
-              {selectedLocation
-                ? `Focused on ${selectedLocation.name}.`
-                : "Choose or create a location to center the map."}
-            </span>
-          </section>
-        </aside>
+        <RightPanel
+          draftLocation={draftLocation}
+          onCreateLocation={handleCreateLocation}
+          onFieldChange={handleFieldChange}
+          onUseCurrentLocation={handleUseCurrentLocation}
+          saving={saving}
+          selectedLocation={selectedLocation}
+        />
       </motion.div>
-      </div>
     </SpaceLayout>
   );
 }
