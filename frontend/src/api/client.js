@@ -144,6 +144,31 @@ export async function createLocation(payload) {
   return response.data;
 }
 
+/**
+ * Update a location.
+ * @backend PATCH /locations/{location_id}
+ * @param {number} locationId - The location ID
+ * @param {Object} payload - Location update data (LocationUpdate schema)
+ * @returns {Promise<Object>} Updated location (LocationOut schema)
+ * @throws {Error} On 404 (location not found) or 401 (auth required)
+ */
+export async function updateLocation(locationId, payload) {
+  const response = await api.patch(`/locations/${locationId}`, payload);
+  return response.data;
+}
+
+/**
+ * Delete a location.
+ * @backend DELETE /locations/{location_id}
+ * @param {number} locationId - The location ID
+ * @returns {Promise<Object>} Confirmation message
+ * @throws {Error} On 404 (location not found) or 401 (auth required)
+ */
+export async function deleteLocation(locationId) {
+  const response = await api.delete(`/locations/${locationId}`);
+  return response.data;
+}
+
 export async function fetchPasses({ locationId, daysAhead = 12, minElevation }) {
   const params = {
     location_id: locationId,
@@ -161,6 +186,41 @@ export async function refreshPasses(locationId, daysAhead = 12) {
     location_id: Number(locationId),
     days_ahead: Number(daysAhead),
   });
+  return response.data;
+}
+
+/**
+ * Fetch a specific satellite pass.
+ * @backend GET /passes/{pass_id}
+ * @param {number} passId - The pass ID
+ * @returns {Promise<Object>} Pass details (PassOut schema)
+ * @throws {Error} On 404 (pass not found) or 401 (auth required)
+ */
+export async function fetchPass(passId) {
+  const response = await api.get(`/passes/${passId}`);
+  return response.data;
+}
+
+/**
+ * Fetch satellite pass statistics.
+ * @backend GET /passes/stats
+ * @returns {Promise<Object>} Stats object with total_passes, excellent_passes, next_pass
+ * @throws {Error} On 401 (auth required)
+ */
+export async function fetchPassStats() {
+  const response = await api.get("/passes/stats");
+  return response.data;
+}
+
+/**
+ * Fetch list of trackable satellites.
+ * @backend GET /satellites
+ * @param {number} limit - Maximum number of satellites to return (default: 100, max: 500)
+ * @returns {Promise<Object>} Object with satellites array
+ * @throws {Error} On 400 (invalid limit)
+ */
+export async function fetchSatellites(limit = 100) {
+  const response = await api.get("/satellites", { params: { limit } });
   return response.data;
 }
 
@@ -184,7 +244,37 @@ export async function deleteAlert(alertId) {
   return response.data;
 }
 
+/**
+ * Fetch a specific alert.
+ * @backend GET /alerts/{alert_id}
+ * @param {number} alertId - The alert ID
+ * @returns {Promise<Object>} Alert details (AlertOut schema)
+ * @throws {Error} On 404 (alert not found) or 401 (auth required)
+ */
+export async function fetchAlert(alertId) {
+  const response = await api.get(`/alerts/${alertId}`);
+  return response.data;
+}
+
+/**
+ * Fetch alert history.
+ * @backend GET /alerts/history
+ * @param {number} days - Number of days to look back (default: 7, max: 90)
+ * @returns {Promise<Array>} Array of alert history records (AlertHistoryOut schema)
+ * @throws {Error} On 401 (auth required)
+ */
 export async function fetchAlertHistory(days = 7) {
   const response = await api.get("/alerts/history", { params: { days } });
+  return response.data;
+}
+
+/**
+ * Fetch alert statistics.
+ * @backend GET /alerts/stats
+ * @returns {Promise<Object>} Stats object with total_alerts, enabled_alerts, delivered_alerts
+ * @throws {Error} On 401 (auth required)
+ */
+export async function fetchAlertStats() {
+  const response = await api.get("/alerts/stats");
   return response.data;
 }

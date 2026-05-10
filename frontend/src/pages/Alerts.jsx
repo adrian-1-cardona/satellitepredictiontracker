@@ -181,7 +181,7 @@ export default function Alerts() {
           <div className="section-heading compact">
             <div>
               <h2>Alert History</h2>
-              <p>Recent simulated deliveries.</p>
+              <p>Recent deliveries from the past {historyDays} days.</p>
             </div>
             <History size={20} aria-hidden="true" />
           </div>

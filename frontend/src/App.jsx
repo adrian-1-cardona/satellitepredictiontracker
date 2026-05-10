@@ -1,5 +1,5 @@
-import { Bell, Satellite, Search, Settings } from "lucide-react";
-import { Link, Navigate, NavLink, Route, Routes, useNavigate } from "react-router-dom";
+import { Bell, Satellite } from "lucide-react";
+import { Navigate, NavLink, Route, Routes, useNavigate } from "react-router-dom";
 import { useAuth } from "./auth/AuthContext.jsx";
 import Alerts from "./pages/Alerts.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
@@ -31,29 +31,17 @@ function AppShell({ children }) {
 
         <nav className="topnav" aria-label="Primary navigation">
           <NavLink to="/dashboard">
-            <span>Home</span>
+            <span>Dashboard</span>
           </NavLink>
-          <span className="nav-ghost">
-            <span>Satellite</span>
-          </span>
-          <span className="nav-ghost">
-            <span>Orbits</span>
-          </span>
-          <Link to="/alerts" className="nav-ghost">
-            <span>Releases</span>
-          </Link>
+          <NavLink to="/alerts">
+            <span>Alerts</span>
+          </NavLink>
         </nav>
 
         <div className="account-strip">
-          <button type="button" className="round-action" title="Search">
-            <Search size={23} aria-hidden="true" />
-          </button>
           <NavLink to="/alerts" className="round-action" title="Alerts">
             <Bell size={21} aria-hidden="true" />
           </NavLink>
-          <button type="button" className="round-action" title="Settings">
-            <Settings size={22} aria-hidden="true" />
-          </button>
           <button
             type="button"
             className="profile-avatar"
