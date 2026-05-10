@@ -1,0 +1,65 @@
+.top-right-auth {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  z-index: 50;
+  display: inline-flex;
+  gap: 10px;
+  max-width: calc((100vw - 48px) / 3); /* center-third exclusion guard */
+}
+
+.auth-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 999px;
+  font-family: var(--font-body);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--ink);
+  background: rgba(12, 20, 33, 0.72);
+  box-shadow:
+    inset 0 0 0 1px rgba(214, 235, 255, 0.14),
+    0 10px 24px rgba(0, 0, 0, 0.32);
+  backdrop-filter: blur(14px);
+  cursor: pointer;
+  transition: background 160ms ease, box-shadow 160ms ease;
+}
+
+.auth-pill.accent {
+  color: #082319;
+  background: var(--mint);
+  box-shadow: 0 10px 28px rgba(142, 255, 240, 0.28);
+}
+
+.auth-pill:focus-visible {
+  outline: 2px solid var(--mint);
+  outline-offset: 3px;
+}
+
+@media (max-width: 767px) {
+  .top-right-auth {
+    top: 16px;
+    right: 16px;
+    gap: 8px;
+  }
+  .auth-pill {
+    padding: 0 12px;
+    font-size: 0.9rem;
+    min-height: 36px;
+  }
+  .auth-pill span {
+    /* text stays visible; we do NOT collapse to a menu */
+  }
+}
+
+@media (max-width: 479px) {
+  /* stacked layout below very narrow viewports, still top-right */
+  .top-right-auth {
+    flex-direction: column;
+    align-items: flex-end;
+  }
+}

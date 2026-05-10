@@ -44,6 +44,8 @@ export function useReducedMotion() {
 
 export function useThreeScene(setupScene, options = {}) {
   const containerRef = useRef(null);
+  const animateFailedRef = useRef(false);
+  const renderFailedRef = useRef(false);
   const prefersReducedMotion = useReducedMotion();
   const stableSetup = useCallback(setupScene, [setupScene]);
   const [cameraX, cameraY, cameraZ] =
@@ -54,6 +56,9 @@ export function useThreeScene(setupScene, options = {}) {
     if (!container) {
       return undefined;
     }
+
+    animateFailedRef.current = false;
+    renderFailedRef.current = false;
 
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 1000);
@@ -107,8 +112,39 @@ export function useThreeScene(setupScene, options = {}) {
       const delta = (currentTime - lastTime) / 1000;
       const elapsed = (currentTime - startTime) / 1000;
       lastTime = currentTime;
-      sceneController.animate?.({ delta, elapsed, prefersReducedMotion });
-      renderer.render(scene, camera);
+
+      if (typeof sceneController.animate === "function") {
+        try {
+          sceneController.animate({ delta, elapsed, prefersReducedMotion });
+        } catch (err) {
+          if (!animateFailedRef.current) {
+            console.warn(
+              "Scene animate threw, disabling further animation",
+              err,
+            );
+            animateFailedRef.current = true;
+          }
+          sceneController.animate = null;
+        }
+      }
+
+      if (!renderFailedRef.current) {
+        try {
+          renderer.render(scene, camera);
+        } catch (err) {
+          if (!renderFailedRef.current) {
+            console.warn(
+              "Scene render threw, suspending further frames",
+              err,
+            );
+            renderFailedRef.current = true;
+          }
+          return;
+        }
+      } else {
+        return;
+      }
+
       frameId = window.requestAnimationFrame(renderFrame);
     }
 

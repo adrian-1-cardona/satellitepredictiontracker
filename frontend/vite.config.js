@@ -3,7 +3,7 @@ import react from "@vitejs/plugin-react";
 import cesium from "vite-plugin-cesium";
 
 export default defineConfig({
-  plugins: [react(), cesium()],
+  plugins: [react({ jsxRuntime: "automatic" }), cesium()],
   server: {
     port: 3000,
     strictPort: true,
