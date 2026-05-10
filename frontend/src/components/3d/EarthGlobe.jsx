@@ -4,10 +4,15 @@ import { useThreeScene } from "../../hooks/useThreeScene.js";
 import { generateConstellationOrbits } from "./constellationData.js";
 import { createSatelliteGeometry } from "./SatelliteGeometry.js";
 import { scaleEarthGlobeSatelliteToEarth } from "./satelliteScale.js";
+import {
+  loadHDRIEnvironment,
+  createProceduralStarfield,
+  disposeEnvironment,
+} from "./hdriLoader.js";
 import SceneContainer from "./SceneContainer.jsx";
 
 const EARTH_RADIUS = 1.4;
-const CAMERA_POSITION = [0, 0.2, 7.4];
+const CAMERA_POSITION = [0, 0.3, 6.2];
 const ISS_ORBIT_RADIUS = 2.05;
 const ISS_INCLINATION_DEGREES = 26;
 const ISS_AZIMUTH_DEGREES = -12;
@@ -149,6 +154,25 @@ export default function EarthGlobe({
           }),
         );
         scene.add(atmosphere);
+
+        // ----- HDRI Environment / Starfield
+        let hdriTexture = null;
+        let starfieldData = null;
+        try {
+          // Try to load HDRI from a space skybox URL (can be replaced with NASA imagery)
+          loadHDRIEnvironment(
+            THREE,
+            scene,
+            "/hdri/space_background.hdr",
+            0.85,
+          ).catch(() => {
+            // Fallback: Create procedural starfield
+            starfieldData = createProceduralStarfield(THREE, scene, 2500);
+          });
+        } catch (err) {
+          console.warn("HDRI environment setup failed, using starfield:", err);
+          starfieldData = createProceduralStarfield(THREE, scene, 2500);
+        }
 
         // ----- ISS orbit group (inclined, carries the glTF and trail ring)
         const orbitRadius = ISS_ORBIT_RADIUS;
@@ -348,6 +372,7 @@ export default function EarthGlobe({
           },
           cleanup: () => {
             disposedFlag.disposed = true;
+            disposeEnvironment(hdriTexture, starfieldData);
           },
         };
       } catch (err) {

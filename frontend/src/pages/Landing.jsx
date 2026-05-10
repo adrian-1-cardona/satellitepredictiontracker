@@ -24,12 +24,17 @@ export default function Landing() {
 
   return (
     <main className="globe-hero" aria-label="Satellite Tracker landing">
+      <HeroStage />
       <TopRightAuthBar
         onLogin={() => setAuthMode("login")}
         onSignup={() => setAuthMode("register")}
       />
-      <StatusIndicator />
-      <HeroStage />
+      <div className="hero-overlay">
+        <div className="hero-content">
+          <h1 className="hero-title">Satellite Prediction Tracker</h1>
+        </div>
+        <StatusIndicator />
+      </div>
       <AuthModal
         open={authMode !== null}
         initialMode={authMode ?? "login"}

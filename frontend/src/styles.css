@@ -3,20 +3,35 @@
   --font-display: "Space Grotesk", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-body: "Inter Tight", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   font-family: var(--font-body);
-  --bg: #05080f;
-  --bg-2: #0a111d;
-  --ink: #f8fbff;
-  --muted: #b9c3d6;
+
+  /* Core neutrals - professional, high contrast */
+  --bg: #0a0e14;
+  --bg-2: #12171f;
+  --ink: #ecf0f8;
+  --muted: #9ca3af;
+
+  /* Functional colors - semantic, professional */
+  --primary: #00b4d8;
+  --primary-dark: #0096c7;
+  --primary-light: #48d1e8;
+
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+
+  /* Subtle accents */
+  --accent-cyan: #06b6d4;
+  --line: rgba(100, 116, 139, 0.15);
+  --shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+
+  /* Deprecated - kept for backward compatibility */
   --soft: rgba(208, 225, 246, 0.16);
   --panel: rgba(10, 18, 31, 0.76);
   --panel-strong: rgba(15, 27, 45, 0.86);
   --blue-glow: #8edcff;
   --mint: #8efff0;
   --lime: #eeff75;
-  --warning: #edff5f;
   --danger: #ff9ea6;
-  --line: rgba(205, 224, 246, 0.14);
-  --shadow: 0 32px 90px rgba(0, 0, 0, 0.54);
 }
 
 * {
@@ -33,11 +48,11 @@ body,
 body {
   margin: 0;
   overflow-x: hidden;
-  background:
-    radial-gradient(circle at 8% 20%, rgba(142, 220, 255, 0.12), transparent 24%),
-    radial-gradient(circle at 78% 8%, rgba(238, 255, 117, 0.08), transparent 18%),
-    linear-gradient(180deg, #080b12 0%, #05080f 54%, #03050a 100%);
+  background: var(--bg);
   color: var(--ink);
+  background-image:
+    radial-gradient(circle at 50% 100%, rgba(6, 182, 212, 0.04), transparent 70%),
+    radial-gradient(circle at 0% 0%, rgba(14, 165, 233, 0.02), transparent 50%);
 }
 
 h1,
@@ -51,21 +66,7 @@ h4,
 }
 
 body::before {
-  position: fixed;
-  inset: 0;
-  z-index: -4;
-  pointer-events: none;
-  content: "";
-  background-image:
-    radial-gradient(circle, rgba(255, 255, 255, 0.85) 0 1px, transparent 1.6px),
-    radial-gradient(circle, rgba(142, 220, 255, 0.7) 0 1px, transparent 1.5px);
-  background-position:
-    18px 22px,
-    73px 94px;
-  background-size:
-    126px 126px,
-    183px 183px;
-  opacity: 0.38;
+  display: none;
 }
 
 button,
@@ -375,9 +376,11 @@ a {
 }
 
 .brand-lockup {
-  color: var(--mint);
-  font-weight: 900;
+  color: var(--primary);
+  font-weight: 700;
   text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 0.875rem;
 }
 
 .brand-mark.large {
@@ -406,21 +409,19 @@ a {
 .content-panel,
 .stat-tile,
 .panel-section {
-  border-radius: 32px;
-  background:
-    linear-gradient(145deg, rgba(23, 43, 64, 0.72), rgba(7, 13, 24, 0.78));
-  box-shadow:
-    inset 0 0 0 1px rgba(214, 235, 255, 0.09),
-    var(--shadow);
-  backdrop-filter: blur(18px);
+  border-radius: 0.5rem;
+  background: var(--bg-2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  backdrop-filter: none;
+  border: 1px solid rgba(100, 116, 139, 0.1);
 }
 
 .landing-proof,
 .signal-readout {
   margin-top: 24px;
   padding: 12px 16px;
-  color: var(--mint);
-  font-weight: 900;
+  color: var(--success);
+  font-weight: 500;
 }
 
 .signal-readout {
@@ -446,36 +447,45 @@ a {
 .form-heading h2,
 .section-heading h2 {
   margin: 0;
+  color: var(--ink);
 }
 
 label {
   display: grid;
   gap: 8px;
   color: var(--muted);
-  font-weight: 800;
+  font-weight: 500;
+  font-size: 0.875rem;
 }
 
 input,
 select {
   width: 100%;
-  border: 0;
-  border-radius: 16px;
+  border: 1px solid rgba(100, 116, 139, 0.2);
+  border-radius: 0.375rem;
   outline: 0;
-  background: rgba(3, 7, 15, 0.7);
+  background: var(--bg);
   color: var(--ink);
-  padding: 13px 14px;
-  box-shadow: inset 0 0 0 1px rgba(214, 235, 255, 0.1);
+  padding: 10px 12px;
+  box-shadow: none;
+  transition: all 150ms ease-out;
+  font-size: 0.9375rem;
 }
 
 input::placeholder {
-  color: rgba(205, 216, 230, 0.62);
+  color: var(--muted);
+}
+
+input:hover,
+select:hover {
+  border-color: rgba(100, 116, 139, 0.4);
 }
 
 input:focus,
 select:focus {
-  box-shadow:
-    inset 0 0 0 1px rgba(142, 255, 240, 0.6),
-    0 0 0 4px rgba(142, 255, 240, 0.12);
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(0, 180, 216, 0.1);
+  outline: none;
 }
 
 .primary-button,
@@ -484,33 +494,54 @@ select:focus {
   justify-content: center;
   min-height: 44px;
   border: 0;
-  border-radius: 999px;
+  border-radius: 0.375rem;
   color: white;
-  font-weight: 900;
-  padding: 11px 18px;
-  background: rgba(12, 42, 39, 0.86);
-  box-shadow:
-    inset 0 0 0 1px rgba(142, 255, 240, 0.24),
-    0 18px 40px rgba(0, 0, 0, 0.28);
+  font-weight: 500;
+  padding: 10px 18px;
+  background: var(--primary);
+  box-shadow: none;
+  transition: all 150ms ease-out;
+  cursor: pointer;
+  font-size: 0.9375rem;
+}
+
+.primary-button:hover {
+  background: var(--primary-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 180, 216, 0.2);
+}
+
+.primary-button:active {
+  transform: translateY(0);
 }
 
 .secondary-button,
 .icon-text-button {
-  background: rgba(30, 45, 68, 0.72);
+  background: rgba(0, 180, 216, 0.12);
+  color: var(--primary);
+  border: 0;
+}
+
+.secondary-button:hover,
+.icon-text-button:hover {
+  background: rgba(0, 180, 216, 0.2);
 }
 
 .message {
   margin: 0 0 16px;
   padding: 12px 14px;
-  border-radius: 18px;
-  font-weight: 800;
-  background: rgba(18, 29, 45, 0.78);
-  box-shadow: inset 0 0 0 1px rgba(214, 235, 255, 0.1);
+  border-radius: 0.375rem;
+  font-weight: 500;
+  background: rgba(100, 116, 139, 0.1);
+  border: 1px solid rgba(100, 116, 139, 0.2);
+  color: var(--muted);
+  font-size: 0.875rem;
 }
 
 .message.error {
-  color: #ffd0d4;
-  background: rgba(100, 28, 42, 0.42);
+  color: #ffffff;
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.3);
 }
 
 .message.success {
@@ -1712,12 +1743,10 @@ select:focus {
   position: relative;
   width: min(440px, 100%);
   padding: 28px 28px 32px;
-  border-radius: 28px;
-  background:
-    linear-gradient(160deg, rgba(24, 40, 64, 0.96), rgba(9, 15, 27, 0.96));
-  box-shadow:
-    inset 0 0 0 1px rgba(214, 235, 255, 0.1),
-    0 40px 100px rgba(0, 0, 0, 0.6);
+  border-radius: 0.5rem;
+  background: var(--bg-2);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(100, 116, 139, 0.1);
 }
 
 .auth-modal-close {
@@ -1729,45 +1758,52 @@ select:focus {
   height: 36px;
   place-items: center;
   border: 0;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.06);
-  color: rgba(248, 251, 255, 0.78);
-  transition: background 160ms ease, color 160ms ease;
+  border-radius: 0.375rem;
+  background: transparent;
+  color: var(--muted);
+  transition: all 150ms ease-out;
+  cursor: pointer;
 }
 
 .auth-modal-close:hover {
-  background: rgba(255, 255, 255, 0.12);
-  color: white;
+  background: rgba(100, 116, 139, 0.1);
+  color: var(--ink);
 }
 
 .auth-modal-tabs {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 4px;
-  margin: 4px auto 22px;
-  padding: 4px;
-  border-radius: 999px;
-  background: rgba(5, 10, 21, 0.6);
-  box-shadow: inset 0 0 0 1px rgba(214, 235, 255, 0.08);
+  gap: 8px;
+  margin: 0 auto 22px;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  border-bottom: 1px solid rgba(100, 116, 139, 0.15);
 }
 
 .auth-modal-tabs button {
   min-height: 40px;
   padding: 0 14px;
   border: 0;
-  border-radius: 999px;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
   background: transparent;
-  color: rgba(248, 251, 255, 0.66);
-  font-weight: 900;
-  transition: background 160ms ease, color 160ms ease;
+  color: var(--muted);
+  font-weight: 500;
+  transition: all 150ms ease-out;
+  cursor: pointer;
+}
+
+.auth-modal-tabs button:hover {
+  color: var(--ink);
 }
 
 .auth-modal-tabs button.active {
-  background: rgba(12, 42, 39, 0.9);
-  color: white;
-  box-shadow:
-    inset 0 0 0 1px rgba(142, 255, 240, 0.4),
-    0 12px 28px rgba(0, 0, 0, 0.28);
+  background: transparent;
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+  box-shadow: none;
 }
 
 .auth-modal .auth-form {
