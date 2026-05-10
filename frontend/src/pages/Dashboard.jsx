@@ -1,4 +1,4 @@
-import { Loader2, MapPin, Plus } from "lucide-react";
+import { Loader2, MapPin, Navigation, Plus } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
@@ -77,6 +77,33 @@ export default function Dashboard() {
     setFocusLocation(coordinates);
     setNotice(`Coordinates selected: ${coordinates.latitude.toFixed(4)}, ${coordinates.longitude.toFixed(4)}`);
   }, []);
+
+  const handleLocateMe = useCallback(() => {
+    if (!navigator.geolocation) {
+      setError("Geolocation not supported by your browser");
+      return;
+    }
+
+    setNotice("Getting your location...");
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude, accuracy } = position.coords;
+        const coordinates = { latitude, longitude, elevation_m: 0 };
+        handleMapClick(coordinates);
+        setNotice(`Location found (±${Math.round(accuracy)}m) - click to add as location`);
+      },
+      (error) => {
+        const messages = {
+          1: "Location permission denied",
+          2: "Location unavailable",
+          3: "Location request timed out",
+        };
+        setError(messages[error.code] || "Failed to get location");
+        setNotice("");
+      },
+      { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 },
+    );
+  }, [handleMapClick]);
 
   function handleFieldChange(event) {
     const { name, value } = event.target;
@@ -194,9 +221,19 @@ export default function Dashboard() {
             <div className="section-heading compact">
               <div>
                 <h2>Add Location</h2>
-                <p>Click the globe or enter coordinates</p>
+                <p>Click the globe, use "Locate Me", or enter coordinates</p>
               </div>
             </div>
+
+            <button
+              type="button"
+              onClick={handleLocateMe}
+              className="primary-button"
+              style={{ marginBottom: "16px", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}
+            >
+              <Navigation size={18} />
+              Locate Me
+            </button>
 
             <form className="stacked-form" onSubmit={handleCreateLocation}>
               <label>

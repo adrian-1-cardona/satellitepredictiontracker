@@ -514,13 +514,13 @@ select:focus {
   text-transform: uppercase;
 }
 
-/* Exact screenshot-inspired dashboard */
+/* Dashboard with map on left, control panel on right */
 .orbit-dashboard {
   position: relative;
   isolation: isolate;
   display: grid;
-  grid-template-columns: 390px minmax(560px, 1fr) 375px;
-  grid-template-rows: minmax(610px, 1fr) 300px;
+  grid-template-columns: minmax(560px, 1fr) 390px;
+  grid-template-rows: auto;
   gap: 20px;
   width: min(1580px, calc(100% - 88px));
   min-height: calc(100vh - 92px);
@@ -684,11 +684,20 @@ select:focus {
   overflow: visible;
 }
 
+.control-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-height: calc(100vh - 120px);
+  overflow-y: auto;
+}
+
 .earth-stage {
-  position: absolute;
-  inset: -112px -210px -190px -190px;
-  overflow: visible;
+  position: relative;
+  inset: auto;
+  overflow: hidden;
   border-radius: 12px;
+  min-height: 610px;
 }
 
 .earth-stage::before {
@@ -697,9 +706,7 @@ select:focus {
   z-index: 2;
   pointer-events: none;
   content: "";
-  background:
-    radial-gradient(circle at 50% 42%, rgba(142, 220, 255, 0.18), transparent 32%),
-    radial-gradient(circle at 50% 42%, transparent 0 39%, rgba(5, 8, 15, 0.2) 53%, rgba(5, 8, 15, 0.88) 72%, rgba(5, 8, 15, 0) 76%);
+  background: transparent;
   mix-blend-mode: screen;
 }
 
@@ -709,28 +716,25 @@ select:focus {
   z-index: 3;
   pointer-events: none;
   content: "";
-  background:
-    radial-gradient(circle at 52% 42%, transparent 0 35%, rgba(115, 205, 255, 0.2) 43%, transparent 54%),
-    radial-gradient(circle at 52% 42%, transparent 0 43%, rgba(4, 8, 15, 0.88) 69%, rgba(4, 8, 15, 0) 76%);
+  background: transparent;
 }
 
 .earth-stage .map-panel {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 1090px;
-  height: 1090px;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   min-height: 0;
   overflow: hidden;
   border: 0;
-  border-radius: 50%;
+  border-radius: 12px;
   background: #02050a;
   box-shadow:
     0 0 0 1px rgba(175, 229, 255, 0.22),
     0 0 90px rgba(142, 220, 255, 0.32),
     inset 0 0 70px rgba(142, 220, 255, 0.18);
-  filter: grayscale(0.82) sepia(0.5) hue-rotate(156deg) saturate(2.4) contrast(1.35) brightness(0.54);
-  transform: translate(-50%, -45%);
+  filter: none;
+  transform: none;
 }
 
 .earth-stage .map-panel::before {
@@ -739,10 +743,7 @@ select:focus {
   z-index: 5;
   pointer-events: none;
   content: "";
-  background:
-    radial-gradient(circle at 45% 42%, rgba(190, 242, 255, 0.24), transparent 28%),
-    radial-gradient(circle at 55% 43%, transparent 0 38%, rgba(9, 20, 35, 0.26) 50%, rgba(2, 5, 10, 0.78) 78%),
-    linear-gradient(145deg, rgba(17, 53, 77, 0.22), rgba(5, 10, 19, 0.54));
+  background: transparent;
   mix-blend-mode: screen;
 }
 
@@ -752,17 +753,9 @@ select:focus {
   z-index: 6;
   pointer-events: none;
   content: "";
-  background-image:
-    radial-gradient(circle, rgba(230, 250, 255, 0.85) 0 1px, transparent 1.5px),
-    radial-gradient(circle, rgba(154, 226, 255, 0.7) 0 1px, transparent 1.7px);
-  background-position:
-    20px 18px,
-    58px 74px;
-  background-size:
-    32px 32px,
-    47px 47px;
-  opacity: 0.2;
-  mask-image: radial-gradient(circle at 50% 50%, black 0 48%, transparent 70%);
+  background: transparent;
+  opacity: 0;
+  mask-image: none;
 }
 
 .earth-stage .cesium-map,
@@ -772,24 +765,14 @@ select:focus {
   height: 100%;
 }
 
+
 .orbit-dashboard .map-help {
   display: none;
 }
 
-.cesium-viewer-toolbar,
-.cesium-viewer-bottom {
-  display: none !important;
-}
-
 .orbit-line {
-  position: absolute;
-  z-index: 3;
-  top: 48%;
-  left: 50%;
-  width: 1080px;
-  height: 230px;
-  border: 1px solid rgba(228, 241, 255, 0.24);
-  border-right-color: transparent;
+  display: none;
+}
   border-left-color: transparent;
   border-radius: 50%;
   pointer-events: none;
@@ -807,19 +790,7 @@ select:focus {
 }
 
 .orbit-node {
-  position: absolute;
-  z-index: 4;
-  width: 76px;
-  height: 76px;
-  border-radius: 999px;
-  background:
-    radial-gradient(circle at 68% 48%, rgba(255, 255, 255, 0.92) 0 8%, transparent 9%),
-    radial-gradient(circle, rgba(26, 36, 54, 0.8), rgba(4, 8, 14, 0.62));
-  box-shadow:
-    inset 0 0 0 1px rgba(234, 244, 255, 0.18),
-    inset 0 0 0 10px rgba(6, 10, 18, 0.28),
-    0 0 24px rgba(142, 220, 255, 0.16);
-  pointer-events: none;
+  display: none;
 }
 
 .orbit-node.one {
@@ -1510,7 +1481,7 @@ select:focus {
 
 @media (max-width: 1440px) {
   .orbit-dashboard {
-    grid-template-columns: 330px minmax(500px, 1fr) 330px;
+    grid-template-columns: minmax(500px, 1fr) 330px;
     width: min(1320px, calc(100% - 32px));
   }
 
@@ -1535,31 +1506,12 @@ select:focus {
     grid-template-rows: auto;
   }
 
-  .ia-rail,
-  .hero-orbit,
-  .orbit-right-column,
-  .dashboard-bottom {
-    grid-column: 1;
-    grid-row: auto;
+  .earth-stage {
+    inset: auto;
+    min-height: 500px;
   }
 
-  .hero-orbit {
-    min-height: 640px;
-    order: 1;
-  }
-
-  .orbit-right-column {
-    grid-template-columns: minmax(0, 1fr) minmax(300px, 0.7fr);
-    order: 2;
-  }
-
-  .dashboard-bottom {
-    grid-template-columns: 1fr;
-    order: 3;
-  }
-
-  .ia-rail {
-    order: 4;
+  .control-panel {
     max-height: none;
   }
 
@@ -1632,6 +1584,14 @@ select:focus {
     width: 610px;
     height: 610px;
     transform: translate(-50%, -42%);
+  }
+
+  .orbit-dashboard {
+    grid-template-columns: 1fr;
+  }
+
+  .control-panel {
+    max-height: none;
   }
 
   .hero-actions {

@@ -1,4 +1,4 @@
-import { Crosshair, MapPin } from "lucide-react";
+import { MapPin } from "lucide-react";
 import { useEffect, useRef } from "react";
 import {
   Cartesian3,
@@ -195,11 +195,8 @@ export default function Map({
           <MapPin size={15} aria-hidden="true" />
           Click the globe to set coordinates
         </span>
-        <span>
-          <Crosshair size={15} aria-hidden="true" />
-          Saved sites are pinned
-        </span>
       </div>
     </section>
   );
 }
+
