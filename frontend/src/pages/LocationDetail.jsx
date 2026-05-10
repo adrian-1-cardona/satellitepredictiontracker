@@ -8,8 +8,8 @@ import {
   getErrorMessage,
   refreshPasses,
 } from "../api/client.js";
-import AlertForm from "../components/AlertForm.jsx";
-import PassList from "../components/PassList.jsx";
+import AlertForm from "../features/alerts/AlertForm.jsx";
+import PassList from "../features/passes/PassList.jsx";
 
 function formatCoordinate(value) {
   const number = Number(value);

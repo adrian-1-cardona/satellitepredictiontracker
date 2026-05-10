@@ -134,19 +134,6 @@ a {
   opacity: 0.46;
 }
 
-.auth-satellite-stage {
-  position: absolute;
-  top: 12%;
-  left: 42%;
-  z-index: -1;
-  width: 430px;
-  max-width: 34vw;
-  height: 390px;
-  max-height: 42vh;
-  opacity: 0.62;
-  pointer-events: none;
-}
-
 /* Top navigation */
 .app-shell {
   display: flex;
@@ -311,24 +298,84 @@ a {
 /* Auth and shared pages */
 .auth-layout {
   display: grid;
-  align-items: center;
+  place-items: center;
   width: 100%;
-  padding: 34px 0;
+  padding: 48px 24px;
 }
 
 .auth-layout-content {
+  position: relative;
+  z-index: 2;
   display: grid;
-  grid-template-columns: minmax(280px, 0.92fr) minmax(320px, 0.88fr);
-  gap: 56px;
-  align-items: center;
-  width: min(1180px, calc(100% - 32px));
-  min-height: calc(100vh - 68px);
-  margin: 0 auto;
+  justify-items: center;
+  text-align: center;
+  width: min(720px, 100%);
+  padding: 24px 0;
 }
 
-.landing-intro {
-  position: relative;
+.auth-globe-stage {
+  position: absolute;
+  inset: 0;
   z-index: 1;
+  pointer-events: none;
+  display: grid;
+  place-items: center;
+}
+
+.auth-globe-stage .earth-globe-scene {
+  position: relative;
+  width: min(780px, 92vmin);
+  height: min(780px, 92vmin);
+  pointer-events: none;
+  filter: drop-shadow(0 30px 80px rgba(8, 23, 45, 0.75));
+}
+
+.auth-globe-stage .three-scene-fill {
+  position: absolute;
+  inset: 0;
+}
+
+.landing-hero {
+  display: grid;
+  justify-items: center;
+  gap: 20px;
+  padding: 42px 24px;
+  border-radius: 28px;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(12, 32, 62, 0.58), rgba(6, 11, 22, 0.12) 72%),
+    rgba(5, 10, 21, 0.32);
+  backdrop-filter: blur(6px);
+  box-shadow:
+    inset 0 0 0 1px rgba(214, 235, 255, 0.08),
+    0 30px 80px rgba(0, 0, 0, 0.45);
+}
+
+.landing-hero h1 {
+  margin: 10px 0 0;
+  font-size: 3.4rem;
+  line-height: 1.05;
+  max-width: 620px;
+}
+
+.landing-hero p {
+  margin: 0;
+  max-width: 520px;
+  color: var(--muted);
+  font-size: 1.05rem;
+  line-height: 1.55;
+}
+
+.landing-actions {
+  display: flex;
+  gap: 14px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.landing-actions .primary-button,
+.landing-actions .secondary-button {
+  min-width: 148px;
 }
 
 .brand-lockup,
@@ -1665,4 +1712,85 @@ select:focus {
   .section-heading h1 {
     font-size: 2.5rem;
   }
+}
+
+/* Auth Modal */
+.auth-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(2, 5, 12, 0.68);
+  backdrop-filter: blur(8px);
+}
+
+.auth-modal {
+  position: relative;
+  width: min(440px, 100%);
+  padding: 28px 28px 32px;
+  border-radius: 28px;
+  background:
+    linear-gradient(160deg, rgba(24, 40, 64, 0.96), rgba(9, 15, 27, 0.96));
+  box-shadow:
+    inset 0 0 0 1px rgba(214, 235, 255, 0.1),
+    0 40px 100px rgba(0, 0, 0, 0.6);
+}
+
+.auth-modal-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  display: grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(248, 251, 255, 0.78);
+  transition: background 160ms ease, color 160ms ease;
+}
+
+.auth-modal-close:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: white;
+}
+
+.auth-modal-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  margin: 4px auto 22px;
+  padding: 4px;
+  border-radius: 999px;
+  background: rgba(5, 10, 21, 0.6);
+  box-shadow: inset 0 0 0 1px rgba(214, 235, 255, 0.08);
+}
+
+.auth-modal-tabs button {
+  min-height: 40px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: rgba(248, 251, 255, 0.66);
+  font-weight: 900;
+  transition: background 160ms ease, color 160ms ease;
+}
+
+.auth-modal-tabs button.active {
+  background: rgba(12, 42, 39, 0.9);
+  color: white;
+  box-shadow:
+    inset 0 0 0 1px rgba(142, 255, 240, 0.4),
+    0 12px 28px rgba(0, 0, 0, 0.28);
+}
+
+.auth-modal .auth-form {
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
 }

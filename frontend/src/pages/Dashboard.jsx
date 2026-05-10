@@ -1,16 +1,14 @@
-import { Loader2, MapPin, Navigation, Plus } from "lucide-react";
+import { Loader2, Navigation } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   createLocation,
-  deleteLocation,
   fetchLocations,
   getErrorMessage,
-  updateLocation,
 } from "../api/client.js";
-import LocationList from "../components/LocationList.jsx";
-import Map from "../components/Map.jsx";
-import SpaceLayout from "../components/layouts/SpaceLayout.jsx";
+import LocationList from "../features/locations/LocationList.jsx";
+import Map from "../features/locations/LocationMap.jsx";
+import SpaceLayout from "../layouts/SpaceLayout.jsx";
 
 const initialLocationForm = {
   name: "",

@@ -1,13 +1,14 @@
-import { Navigate } from "react-router-dom";
-import { RadioTower, Satellite, ShieldCheck } from "lucide-react";
+import { LogIn, RadioTower, Satellite, UserPlus } from "lucide-react";
 import { motion } from "framer-motion";
-import LoginForm from "../components/LoginForm.jsx";
-import RegisterForm from "../components/RegisterForm.jsx";
-import AuthLayout from "../components/layouts/AuthLayout.jsx";
+import { useState } from "react";
+import { Navigate } from "react-router-dom";
+import AuthModal from "../features/auth/AuthModal.jsx";
+import AuthLayout from "../layouts/AuthLayout.jsx";
 import { useAuth } from "../auth/AuthContext.jsx";
 
 export default function Landing() {
   const { isAuthenticated } = useAuth();
+  const [authMode, setAuthMode] = useState(null);
 
   if (isAuthenticated) {
     return <Navigate to="/dashboard" replace />;
@@ -17,9 +18,9 @@ export default function Landing() {
     <AuthLayout>
       <motion.section
         aria-label="Satellite Tracker overview"
-        className="landing-intro"
-        initial={{ opacity: 0, x: -18 }}
-        animate={{ opacity: 1, x: 0 }}
+        className="landing-hero"
+        initial={{ opacity: 0, y: 18 }}
+        animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
       >
         <div className="brand-lockup">
@@ -28,15 +29,32 @@ export default function Landing() {
           </span>
           <span>Satellite Tracker</span>
         </div>
-        <h1>Visible satellite passes, plotted from your observing sites.</h1>
+
+        <h1>Real-time orbital tracking.</h1>
         <p>
-          Save locations, inspect upcoming pass windows, and create alert rules against
-          your FastAPI prediction service.
+          Save observing sites, forecast visible passes, and set alert rules against
+          your prediction service.
         </p>
-        <div className="landing-proof">
-          <ShieldCheck size={18} aria-hidden="true" />
-          <span>JWT auth and private observing data stay wired to the existing API.</span>
+
+        <div className="landing-actions">
+          <button
+            type="button"
+            className="primary-button"
+            onClick={() => setAuthMode("login")}
+          >
+            <LogIn size={18} aria-hidden="true" />
+            <span>Log In</span>
+          </button>
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={() => setAuthMode("register")}
+          >
+            <UserPlus size={18} aria-hidden="true" />
+            <span>Sign Up</span>
+          </button>
         </div>
+
         <div className="signal-readout" aria-label="Interface status">
           <span>
             <RadioTower size={16} aria-hidden="true" />
@@ -46,16 +64,11 @@ export default function Landing() {
         </div>
       </motion.section>
 
-      <motion.section
-        aria-label="Authentication"
-        className="auth-panel"
-        initial={{ opacity: 0, x: 18 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.65, delay: 0.12, ease: [0.22, 1, 0.36, 1] }}
-      >
-        <LoginForm />
-        <RegisterForm />
-      </motion.section>
+      <AuthModal
+        open={authMode !== null}
+        initialMode={authMode ?? "login"}
+        onClose={() => setAuthMode(null)}
+      />
     </AuthLayout>
   );
 }

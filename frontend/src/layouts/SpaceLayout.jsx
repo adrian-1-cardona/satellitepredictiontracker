@@ -1,4 +1,4 @@
-import Starfield from "../3d/Starfield.jsx";
+import Starfield from "../components/3d/Starfield.jsx";
 
 export default function SpaceLayout({ children, densityVariant = "normal" }) {
   return (

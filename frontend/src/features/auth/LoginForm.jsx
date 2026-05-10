@@ -1,12 +1,12 @@
-import { UserPlus } from "lucide-react";
+import { LogIn } from "lucide-react";
 import { motion } from "framer-motion";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getErrorMessage } from "../api/client.js";
-import { useAuth } from "../auth/AuthContext.jsx";
+import { getErrorMessage } from "../../api/client.js";
+import { useAuth } from "../../auth/AuthContext.jsx";
 
-export default function RegisterForm() {
-  const { register } = useAuth();
+export default function LoginForm() {
+  const { login } = useAuth();
   const navigate = useNavigate();
   const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
@@ -22,10 +22,10 @@ export default function RegisterForm() {
     setLoading(true);
     setError("");
     try {
-      await register({ email: form.email.trim(), password: form.password });
+      await login({ email: form.email.trim(), password: form.password });
       navigate("/dashboard", { replace: true });
     } catch (err) {
-      setError(getErrorMessage(err, "Unable to create account."));
+      setError(getErrorMessage(err, "Unable to sign in."));
     } finally {
       setLoading(false);
     }
@@ -36,12 +36,12 @@ export default function RegisterForm() {
       className="auth-form"
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.45, delay: 0.08, ease: [0.22, 1, 0.36, 1] }}
+      transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
       onSubmit={handleSubmit}
     >
       <div className="form-heading">
-        <h2>Create Account</h2>
-        <p>Save observing sites and build alert rules.</p>
+        <h2>Mission Login</h2>
+        <p>Resume watching passes from your saved locations.</p>
       </div>
 
       {error && <div className="message error" role="alert">{error}</div>}
@@ -62,11 +62,11 @@ export default function RegisterForm() {
       <label>
         <span>Password</span>
         <input
-          autoComplete="new-password"
-          minLength={8}
+          autoComplete="current-password"
+          minLength={1}
           name="password"
           onChange={handleChange}
-          placeholder="At least 8 characters"
+          placeholder="Your password"
           required
           type="password"
           value={form.password}
@@ -74,8 +74,8 @@ export default function RegisterForm() {
       </label>
 
       <button className="primary-button" disabled={loading} type="submit">
-        <UserPlus size={18} aria-hidden="true" />
-        <span>{loading ? "Creating..." : "Sign Up"}</span>
+        <LogIn size={18} aria-hidden="true" />
+        <span>{loading ? "Signing in..." : "Access Dashboard"}</span>
       </button>
     </motion.form>
   );

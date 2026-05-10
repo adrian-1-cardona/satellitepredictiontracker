@@ -1,6 +1,6 @@
 import { BellPlus } from "lucide-react";
 import { useState } from "react";
-import { getErrorMessage } from "../api/client.js";
+import { getErrorMessage } from "../../api/client.js";
 
 const initialForm = {
   satellite_name: "",
