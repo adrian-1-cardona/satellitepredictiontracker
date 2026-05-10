@@ -4,16 +4,15 @@ import {
   Cartesian3,
   Cartesian2,
   Cartographic,
-  buildModuleUrl,
   Color,
   CustomDataSource,
   EllipsoidTerrainProvider,
   HorizontalOrigin,
   ImageryLayer,
   Math as CesiumMath,
+  OpenStreetMapImageryProvider,
   ScreenSpaceEventHandler,
   ScreenSpaceEventType,
-  TileMapServiceImageryProvider,
   VerticalOrigin,
   Viewer,
 } from "cesium";
@@ -47,10 +46,11 @@ export default function Map({
 
     const viewer = new Viewer(containerRef.current, {
       animation: false,
-      baseLayer: ImageryLayer.fromProviderAsync(
-        TileMapServiceImageryProvider.fromUrl(
-          buildModuleUrl("Assets/Textures/NaturalEarthII"),
-        ),
+      baseLayer: new ImageryLayer(
+        new OpenStreetMapImageryProvider({
+          url: "https://tile.openstreetmap.org/",
+          credit: "OpenStreetMap contributors",
+        }),
       ),
       baseLayerPicker: false,
       fullscreenButton: false,
@@ -61,8 +61,20 @@ export default function Map({
       sceneModePicker: false,
       selectionIndicator: false,
       shouldAnimate: true,
+      showRenderLoopErrors: false,
       timeline: false,
       terrainProvider: new EllipsoidTerrainProvider(),
+    });
+
+    // Render at native device resolution so the globe isn't blurry on HiDPI screens.
+    viewer.resolutionScale = 1.0;
+    viewer.useBrowserRecommendedResolution = false;
+
+    // Log render errors to the console instead of letting them surface as a
+    // permanent "Rendering has stopped" dialog.
+    viewer.scene.renderError.addEventListener((_scene, error) => {
+      // eslint-disable-next-line no-console
+      console.warn("Cesium render error:", error);
     });
 
     viewer.scene.globe.enableLighting = true;

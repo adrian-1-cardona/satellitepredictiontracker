@@ -773,10 +773,6 @@ select:focus {
 .orbit-line {
   display: none;
 }
-  border-left-color: transparent;
-  border-radius: 50%;
-  pointer-events: none;
-}
 
 .orbit-line.one {
   transform: translate(-50%, -50%) rotate(-10deg);
