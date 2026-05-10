@@ -34,7 +34,11 @@ const TYPE_CONFIG = {
 };
 
 function makeMaterial(THREE, params) {
-  return new THREE.MeshStandardMaterial(params);
+  return new THREE.MeshStandardMaterial({
+    emissive: 0x000000,
+    emissiveIntensity: 0,
+    ...params,
+  });
 }
 
 function createBoxMesh(THREE, dimensions, material) {
@@ -73,8 +77,6 @@ export function createSatelliteGeometry(type, THREE, options = {}) {
     color: 0xe8edf4,
     metalness: 0.72,
     roughness: 0.28,
-    emissive: 0x1a1a1a,
-    emissiveIntensity: 0.38,
   });
   const coreMaterial = makeMaterial(THREE, {
     color: 0x9aa9ba,
@@ -82,23 +84,17 @@ export function createSatelliteGeometry(type, THREE, options = {}) {
     roughness: 0.25,
   });
   const panelMaterial = makeMaterial(THREE, {
-    color: 0x1a4d4d,
+    color: 0x1f4f67,
     metalness: 0.42,
     roughness: 0.48,
-    emissive: 0x062f36,
-    emissiveIntensity: 0.28,
   });
   const antennaMaterial = makeMaterial(THREE, {
     color: 0xd79a22,
     metalness: 0.62,
     roughness: 0.34,
-    emissive: 0x261600,
-    emissiveIntensity: 0.24,
   });
   const beaconMaterial = makeMaterial(THREE, {
-    color: options.accentColor ?? 0x7dd3fc,
-    emissive: options.accentColor ?? 0x7dd3fc,
-    emissiveIntensity: 0.82,
+    color: options.accentColor ?? 0x00b4d8,
     metalness: 0.2,
     roughness: 0.38,
   });

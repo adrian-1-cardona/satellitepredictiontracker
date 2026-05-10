@@ -18,6 +18,7 @@ const captured = {
   controller: null,
   camera: null,
   lastModelUrl: null,
+  loadedUrls: [],
   prefersReducedMotion: false,
 };
 globalThis.__CAPTURED_EARTH_GLOBE__ = captured;
@@ -67,8 +68,13 @@ vi.mock("three/examples/jsm/loaders/GLTFLoader.js", async () => {
   const ThreeModule = await import("three");
   return {
     GLTFLoader: class MockGLTFLoader {
-      load(url, onLoad /* onProgress, onError */) {
+      load(url, onLoad, _onProgress, onError) {
         globalThis.__CAPTURED_EARTH_GLOBE__.lastModelUrl = url;
+        globalThis.__CAPTURED_EARTH_GLOBE__.loadedUrls.push(url);
+        if (url.includes("missing")) {
+          onError?.(new Error(`missing mock asset: ${url}`));
+          return;
+        }
         const modelScene = new ThreeModule.Group();
         modelScene.name = "LoadedGLTFMock";
         const mesh = new ThreeModule.Mesh(
@@ -147,6 +153,7 @@ beforeEach(() => {
   bag.controller = null;
   bag.camera = null;
   bag.lastModelUrl = null;
+  bag.loadedUrls = [];
   bag.prefersReducedMotion = false;
 
   // Prevent the real TextureLoader from trying to fetch images under jsdom
@@ -170,6 +177,15 @@ afterEach(() => {
 // ---- Tests ----------------------------------------------------------------
 
 describe("EarthGlobe", () => {
+  test("sets the NASA presentation camera position", () => {
+    render(<EarthGlobe />);
+    const { camera } = globalThis.__CAPTURED_EARTH_GLOBE__;
+
+    expect(camera.position.x).toBeCloseTo(0, 4);
+    expect(camera.position.y).toBeCloseTo(0.3, 4);
+    expect(camera.position.z).toBeCloseTo(9.2, 4);
+  });
+
   test("defaults modelUrl to /models/iss.glb", () => {
     render(<EarthGlobe />);
     expect(globalThis.__CAPTURED_EARTH_GLOBE__.lastModelUrl).toBe(
@@ -251,6 +267,47 @@ describe("EarthGlobe", () => {
     expect(foundOldDish).toBe(false);
   });
 
+  test("procedural and loaded satellite materials do not emit light", () => {
+    render(<EarthGlobe />);
+    const { scene } = globalThis.__CAPTURED_EARTH_GLOBE__;
+    expect(scene).toBeTruthy();
+
+    scene.traverse((child) => {
+      const materials = Array.isArray(child.material)
+        ? child.material
+        : [child.material].filter(Boolean);
+
+      materials.forEach((material) => {
+        if ("emissiveIntensity" in material) {
+          expect(material.emissiveIntensity).toBe(0);
+        }
+      });
+    });
+  });
+
+  test("keeps a procedural ISS fallback when the named glTF model fails", () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    render(<EarthGlobe modelUrl="/models/missing-iss.glb" />);
+    const { scene } = globalThis.__CAPTURED_EARTH_GLOBE__;
+    expect(scene).toBeTruthy();
+
+    const orbit = findOrbitGroup(scene);
+    expect(orbit).toBeTruthy();
+
+    const satelliteWrapper = findSatelliteWrapper(orbit);
+    expect(satelliteWrapper).toBeTruthy();
+
+    let foundProceduralFallback = false;
+    satelliteWrapper.traverse((child) => {
+      if (child.userData?.isProceduralSatellite) {
+        foundProceduralFallback = true;
+      }
+    });
+    expect(foundProceduralFallback).toBe(true);
+    expect(warnSpy).toHaveBeenCalled();
+    warnSpy.mockRestore();
+  });
+
   test("uses reduced orbit and self-spin speeds when prefers-reduced-motion is reduce", () => {
     mockMatchMedia(true);
     globalThis.__CAPTURED_EARTH_GLOBE__.prefersReducedMotion = true;
@@ -272,9 +329,9 @@ describe("EarthGlobe", () => {
     controller.animate({ delta: 1, elapsed: 1, prefersReducedMotion: true });
 
     // Reduced-motion speeds from EarthGlobe.jsx:
-    //   earthSpeed = 0.02  (normal would be 0.055)
-    //   orbitSpeed = 0.08  (normal would be 0.32)
-    expect(earth.rotation.y).toBeCloseTo(0.02, 4);
-    expect(orbit.rotation.y).toBeCloseTo(0.08, 4);
+    //   earthSpeed = 0.002  (normal is 0.005)
+    //   orbitSpeed = 0.007  (normal is 0.027)
+    expect(earth.rotation.y).toBeCloseTo(0.002, 4);
+    expect(orbit.rotation.y).toBeCloseTo(0.007, 4);
   });
 });

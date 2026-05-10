@@ -135,6 +135,12 @@ describe("Landing (globe-hero-ui)", () => {
       expect(
         screen.getByRole("button", { name: /sign up/i }),
       ).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: /get started/i }),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: /sign in/i }),
+      ).toBeInTheDocument();
     });
 
     test("renders a single status pill announcing the prediction service", () => {
@@ -180,6 +186,27 @@ describe("Landing (globe-hero-ui)", () => {
           .getAllByRole("heading", { name: /create account/i })
           .some((heading) => !heading.classList.contains("sr-only")),
       ).toBe(true);
+    });
+
+    test("landing CTAs open the expected auth modal modes", async () => {
+      const user = userEvent.setup();
+      renderLanding();
+
+      await user.click(screen.getByRole("button", { name: /get started/i }));
+      expect(
+        (await screen.findAllByRole("heading", { name: /create account/i }))
+          .some((heading) => !heading.classList.contains("sr-only")),
+      ).toBe(true);
+
+      await user.keyboard("{Escape}");
+      await waitFor(() => {
+        expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+      });
+
+      await user.click(screen.getByRole("button", { name: /sign in/i }));
+      expect(
+        await screen.findByRole("heading", { name: /mission login/i }),
+      ).toBeInTheDocument();
     });
 
     test("Escape closes the open modal", async () => {

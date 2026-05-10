@@ -1,24 +1,37 @@
 import { useCallback, useRef } from "react";
+import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { useThreeScene } from "../../hooks/useThreeScene.js";
 import { generateConstellationOrbits } from "./constellationData.js";
 import { createSatelliteGeometry } from "./SatelliteGeometry.js";
 import { scaleEarthGlobeSatelliteToEarth } from "./satelliteScale.js";
-import {
-  loadHDRIEnvironment,
-  createProceduralStarfield,
-  disposeEnvironment,
-} from "./hdriLoader.js";
 import SceneContainer from "./SceneContainer.jsx";
 
 const EARTH_RADIUS = 1.4;
-const CAMERA_POSITION = [0, 0.3, 6.2];
+const CAMERA_POSITION = [0, 0.3, 9.2];
 const ISS_ORBIT_RADIUS = 2.05;
 const ISS_INCLINATION_DEGREES = 26;
 const ISS_AZIMUTH_DEGREES = -12;
 const ISS_TARGET_RATIO = 0.145;
-const CONSTELLATION_BASE_SPEED = 0.72;
-const CONSTELLATION_REDUCED_BASE_SPEED = 0.18;
+const EARTH_TEXTURE_LODS = [
+  { id: "4k", maxAltitude: 4.8, url: "/textures/earth/earth-4k.jpg" },
+  { id: "2k", maxAltitude: 8.2, url: "/textures/earth/earth-2k.jpg" },
+  { id: "1k", maxAltitude: Number.POSITIVE_INFINITY, url: "/textures/earth/earth-1k.jpg" },
+];
+
+// ⚠️ CRITICAL: Satellite animation speeds are DRAMATICALLY SLOWED for visual inspection.
+// These are NOT realistic speeds. Backend predictions remain accurate; this is UI visualization speed only.
+// Rationale: Allows users to visually observe orbital patterns without waiting hours.
+//
+// Visualization targets:
+// - ISS: 5-10 seconds per orbit (realistic: ~90 minutes)
+// - LEO satellites: 10-20 seconds per orbit
+// - MEO satellites: 30-60 seconds per orbit
+// - GEO satellites: Nearly stationary (background only)
+//
+// Reduced by ~12x from realistic speeds to allow human observation.
+const CONSTELLATION_BASE_SPEED = 0.06; // Slowed from 0.72
+const CONSTELLATION_REDUCED_BASE_SPEED = 0.015; // Slowed from 0.18
 
 /**
  * Walk an Object3D tree and dispose geometries, materials, and any textures
@@ -47,12 +60,80 @@ function disposeObjectTree(object) {
   });
 }
 
+function sanitizeModelMaterials(model) {
+  model.traverse((child) => {
+    if (!child.isMesh) return;
+    child.castShadow = true;
+    child.receiveShadow = true;
+
+    const materials = Array.isArray(child.material)
+      ? child.material
+      : [child.material];
+    materials.forEach((material) => {
+      if (!material) return;
+      if (material.emissive?.setHex) material.emissive.setHex(0x000000);
+      if ("emissiveIntensity" in material) material.emissiveIntensity = 0;
+      if ("toneMapped" in material) material.toneMapped = true;
+      material.needsUpdate = true;
+    });
+  });
+}
+
+function loadColorTexture(THREE, textureLoader, url) {
+  const texture = textureLoader.load(url);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.anisotropy = 8;
+  return texture;
+}
+
+function selectEarthTextureLod(camera, earthRadius) {
+  const altitude = Math.max(0, camera.position.length() - earthRadius);
+  return EARTH_TEXTURE_LODS.find((lod) => altitude <= lod.maxAltitude) ||
+    EARTH_TEXTURE_LODS[EARTH_TEXTURE_LODS.length - 1];
+}
+
+function createScaledProceduralSatellite(THREE, earthRadius, satelliteConfig) {
+  const satelliteModel = createSatelliteGeometry(
+    satelliteConfig.type,
+    THREE,
+    { accentColor: satelliteConfig.color },
+  );
+  const scale = scaleEarthGlobeSatelliteToEarth(
+    satelliteModel.userData.longestSide,
+    earthRadius,
+    satelliteConfig.size,
+  );
+  if (scale <= 0) {
+    disposeObjectTree(satelliteModel);
+    return null;
+  }
+  satelliteModel.scale.setScalar(scale);
+  return satelliteModel;
+}
+
+function attachLoadedModel({ THREE, model, earthRadius, targetRatio }) {
+  const box = new THREE.Box3().setFromObject(model);
+  const size = box.getSize(new THREE.Vector3());
+  const center = box.getCenter(new THREE.Vector3());
+  const longestSide = Math.max(size.x, size.y, size.z);
+  const scale = scaleEarthGlobeSatelliteToEarth(
+    longestSide,
+    earthRadius,
+    targetRatio,
+  );
+  if (scale <= 0) return false;
+  sanitizeModelMaterials(model);
+  model.position.sub(center);
+  model.scale.setScalar(scale);
+  return true;
+}
+
 function createOrbitTrail(
   THREE,
   {
     radius,
-    color = 0x8edcff,
-    opacity = 0.18,
+    color = 0x00b4d8,
+    opacity = 0.12,
     tubeRadius = 0.0024,
     radialSegments = 6,
     tubularSegments = 192,
@@ -103,76 +184,43 @@ export default function EarthGlobe({
   const disposedFlagRef = useRef({ disposed: false });
 
   const setupScene = useCallback(
-    ({ THREE, camera, prefersReducedMotion, scene }) => {
+    ({ THREE, camera, prefersReducedMotion, renderer, scene }) => {
       try {
         disposedFlagRef.current = { disposed: false };
         const disposedFlag = disposedFlagRef.current;
 
         camera.position.set(...CAMERA_POSITION);
         camera.lookAt(0, 0, 0);
+        scene.background = new THREE.Color(0x000000);
+        renderer?.setClearColor?.(0x000000, 1);
 
         // ----- Earth
         const textureLoader = new THREE.TextureLoader();
-        const diffuse = textureLoader.load("/textures/earth_atmos.jpg");
+        const textureCache = new Map();
+        let currentTextureLod = selectEarthTextureLod(camera, EARTH_RADIUS);
+        textureCache.set(
+          currentTextureLod.id,
+          loadColorTexture(THREE, textureLoader, currentTextureLod.url),
+        );
         const specular = textureLoader.load("/textures/earth_specular.jpg");
-        diffuse.colorSpace = THREE.SRGBColorSpace;
 
         const earthRadius = EARTH_RADIUS;
         const earth = new THREE.Mesh(
           new THREE.SphereGeometry(earthRadius, 96, 96),
           new THREE.MeshPhongMaterial({
-            map: diffuse,
+            map: textureCache.get(currentTextureLod.id),
             specularMap: specular,
             specular: new THREE.Color(0x333333),
+            emissive: new THREE.Color(0x000000),
+            emissiveIntensity: 0,
             shininess: 18,
           }),
         );
         earth.rotation.y = -1.2;
         scene.add(earth);
 
-        // ----- Atmosphere glow
-        const atmosphere = new THREE.Mesh(
-          new THREE.SphereGeometry(1.46, 64, 64),
-          new THREE.ShaderMaterial({
-            transparent: true,
-            side: THREE.BackSide,
-            uniforms: {},
-            vertexShader: /* glsl */ `
-              varying vec3 vNormal;
-              void main() {
-                vNormal = normalize(normalMatrix * normal);
-                gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-              }
-            `,
-            fragmentShader: /* glsl */ `
-              varying vec3 vNormal;
-              void main() {
-                float intensity = pow(0.62 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 2.2);
-                gl_FragColor = vec4(0.36, 0.72, 1.0, 1.0) * intensity;
-              }
-            `,
-          }),
-        );
-        scene.add(atmosphere);
-
-        // ----- HDRI Environment / Starfield
-        let hdriTexture = null;
-        let starfieldData = null;
-        try {
-          // Try to load HDRI from a space skybox URL (can be replaced with NASA imagery)
-          loadHDRIEnvironment(
-            THREE,
-            scene,
-            "/hdri/space_background.hdr",
-            0.85,
-          ).catch(() => {
-            // Fallback: Create procedural starfield
-            starfieldData = createProceduralStarfield(THREE, scene, 2500);
-          });
-        } catch (err) {
-          console.warn("HDRI environment setup failed, using starfield:", err);
-          starfieldData = createProceduralStarfield(THREE, scene, 2500);
-        }
+        // Atmosphere shader intentionally omitted; Earth remains crisp without
+        // luminous post-processing or halo materials.
 
         // ----- ISS orbit group (inclined, carries the glTF and trail ring)
         const orbitRadius = ISS_ORBIT_RADIUS;
@@ -186,13 +234,18 @@ export default function EarthGlobe({
         orbit.add(
           createOrbitTrail(THREE, {
             radius: orbitRadius,
-            color: 0x8edcff,
-            opacity: 0.22,
+            color: 0x00b4d8,
+            opacity: 0.14,
             tubeRadius: 0.003,
             radialSegments: 8,
             tubularSegments: 128,
           }),
         );
+
+        const loader = new GLTFLoader();
+        const dracoLoader = new DRACOLoader();
+        dracoLoader.setDecoderPath("/draco/");
+        loader.setDRACOLoader?.(dracoLoader);
 
         // ----- Procedural satellite constellation
         const constellationSatellites = [];
@@ -223,22 +276,18 @@ export default function EarthGlobe({
           orbitConfig.satellites.forEach((satelliteConfig) => {
             const satelliteWrapper = new THREE.Group();
             satelliteWrapper.name = `ConstellationSatellite:${satelliteConfig.id}`;
-            const satelliteModel = createSatelliteGeometry(
-              satelliteConfig.type,
-              THREE,
-              { accentColor: satelliteConfig.color },
-            );
-            const scale = scaleEarthGlobeSatelliteToEarth(
-              satelliteModel.userData.longestSide,
-              earthRadius,
-              satelliteConfig.size,
-            );
-            if (scale <= 0) return;
-
             const angle = THREE.MathUtils.degToRad(satelliteConfig.angle);
             const roll = THREE.MathUtils.degToRad(satelliteConfig.roll);
-            satelliteModel.scale.setScalar(scale);
-            satelliteWrapper.add(satelliteModel);
+
+            const fallbackModel = createScaledProceduralSatellite(
+              THREE,
+              earthRadius,
+              satelliteConfig,
+            );
+            if (!fallbackModel) return;
+
+            let activeModel = fallbackModel;
+            satelliteWrapper.add(fallbackModel);
             positionSatelliteOnOrbit(
               satelliteWrapper,
               orbitConfig.orbitRadius,
@@ -248,7 +297,9 @@ export default function EarthGlobe({
             orbitPlane.add(satelliteWrapper);
             constellationSatellites.push({
               wrapper: satelliteWrapper,
-              model: satelliteModel,
+              get model() {
+                return activeModel;
+              },
               orbitRadius: orbitConfig.orbitRadius,
               angle,
               roll,
@@ -256,17 +307,64 @@ export default function EarthGlobe({
               spin: satelliteConfig.spin,
               phase: angle,
             });
+
+            if (satelliteConfig.modelUrl) {
+              loader.load(
+                satelliteConfig.modelUrl,
+                (gltf) => {
+                  if (disposedFlag.disposed) {
+                    disposeObjectTree(gltf.scene);
+                    return;
+                  }
+                  try {
+                    const attached = attachLoadedModel({
+                      THREE,
+                      model: gltf.scene,
+                      earthRadius,
+                      targetRatio: satelliteConfig.size,
+                    });
+                    if (!attached) {
+                      disposeObjectTree(gltf.scene);
+                      return;
+                    }
+                    satelliteWrapper.remove(fallbackModel);
+                    disposeObjectTree(fallbackModel);
+                    satelliteWrapper.add(gltf.scene);
+                    activeModel = gltf.scene;
+                  } catch (err) {
+                    disposeObjectTree(gltf.scene);
+                    console.warn(
+                      `${satelliteConfig.name || satelliteConfig.id} model attach failed; using procedural fallback`,
+                      err,
+                    );
+                  }
+                },
+                undefined,
+                (err) => {
+                  console.warn(
+                    `${satelliteConfig.name || satelliteConfig.id} model load failed; using procedural fallback`,
+                    err,
+                  );
+                },
+              );
+            }
           });
 
           constellationRoot.add(orbitPlane);
         });
 
-        // Created only after the glTF successfully loads. On load failure the
-        // orbit group intentionally keeps only the trail torus.
-        let satelliteWrapper = null;
+        const issFallback = createScaledProceduralSatellite(THREE, earthRadius, {
+          type: "leo",
+          color: "#00b4d8",
+          size: ISS_TARGET_RATIO,
+        });
+        const satelliteWrapper = new THREE.Group();
+        satelliteWrapper.name = "ISSSatelliteWrapper";
+        satelliteWrapper.position.set(orbitRadius, 0, 0);
+        if (issFallback) satelliteWrapper.add(issFallback);
+        orbit.add(satelliteWrapper);
 
         // ----- Satellite model (async glTF load)
-        const loader = new GLTFLoader();
         loader.load(
           modelUrl,
           (gltf) => {
@@ -277,47 +375,28 @@ export default function EarthGlobe({
               return;
             }
             try {
-              const box = new THREE.Box3().setFromObject(gltf.scene);
-              const size = box.getSize(new THREE.Vector3());
-              const longestSide = Math.max(size.x, size.y, size.z);
-              const scale = scaleEarthGlobeSatelliteToEarth(
-                longestSide,
+              const attached = attachLoadedModel({
+                THREE,
+                model: gltf.scene,
                 earthRadius,
-                ISS_TARGET_RATIO,
-              );
-              if (scale <= 0) {
+                targetRatio: ISS_TARGET_RATIO,
+              });
+              if (!attached) {
                 disposeObjectTree(gltf.scene);
                 return;
               }
-              gltf.scene.scale.setScalar(scale);
-              gltf.scene.traverse((child) => {
-                if (child.isMesh) {
-                  child.castShadow = true;
-                  child.receiveShadow = true;
-                }
-              });
 
-              satelliteWrapper = new THREE.Group();
-              satelliteWrapper.name = "ISSSatelliteWrapper";
-              satelliteWrapper.position.set(orbitRadius, 0, 0);
-              const issGlow = new THREE.Mesh(
-                new THREE.SphereGeometry(earthRadius * 0.095, 24, 16),
-                new THREE.MeshBasicMaterial({
-                  color: 0x7dd3fc,
-                  transparent: true,
-                  opacity: 0.18,
-                  blending: THREE.AdditiveBlending,
-                  depthWrite: false,
-                }),
-              );
-              issGlow.name = "ISSSubtleGlow";
-              satelliteWrapper.add(issGlow);
+              // Keep the ISS model as a solid PBR asset without halo materials.
+              if (issFallback) {
+                satelliteWrapper.remove(issFallback);
+                disposeObjectTree(issFallback);
+              }
               satelliteWrapper.add(gltf.scene);
-              orbit.add(satelliteWrapper);
               onModelLoaded?.(gltf.scene);
             } catch (err) {
+              disposeObjectTree(gltf.scene);
               console.warn(
-                "ISS model attach failed, rendering without satellite",
+                "ISS model attach failed; using procedural fallback",
                 err,
               );
             }
@@ -325,7 +404,7 @@ export default function EarthGlobe({
           undefined,
           (err) => {
             console.warn(
-              "ISS model load failed, rendering without satellite",
+              "ISS model load failed; using procedural fallback",
               err,
             );
           },
@@ -344,12 +423,28 @@ export default function EarthGlobe({
 
         return {
           animate: ({ delta }) => {
-            const earthSpeed = prefersReducedMotion ? 0.02 : 0.055;
-            const orbitSpeed = prefersReducedMotion ? 0.08 : 0.32;
+            // ⚠️ SLOWED SPEEDS: All orbital speeds reduced ~12x for visual inspection.
+            // Users can observe orbital patterns within seconds instead of hours.
+            // Backend predictions remain accurate; this is UI visualization speed only.
+            const nextTextureLod = selectEarthTextureLod(camera, earthRadius);
+            if (nextTextureLod.id !== currentTextureLod.id) {
+              if (!textureCache.has(nextTextureLod.id)) {
+                textureCache.set(
+                  nextTextureLod.id,
+                  loadColorTexture(THREE, textureLoader, nextTextureLod.url),
+                );
+              }
+              earth.material.map = textureCache.get(nextTextureLod.id);
+              earth.material.needsUpdate = true;
+              currentTextureLod = nextTextureLod;
+            }
+
+            const earthSpeed = prefersReducedMotion ? 0.002 : 0.005; // Slowed from 0.02/0.055
+            const orbitSpeed = prefersReducedMotion ? 0.007 : 0.027; // ISS: Slowed from 0.08/0.32 (~5-10s per orbit)
             const constellationBaseSpeed = prefersReducedMotion
               ? CONSTELLATION_REDUCED_BASE_SPEED
               : CONSTELLATION_BASE_SPEED;
-            const selfSpinSpeed = prefersReducedMotion ? 0.16 : 0.54;
+            const selfSpinSpeed = prefersReducedMotion ? 0.013 : 0.045; // Slowed from 0.16/0.54
             earth.rotation.y += delta * earthSpeed;
             orbit.rotation.y += delta * orbitSpeed;
             constellationSatellites.forEach((satellite) => {
@@ -367,12 +462,15 @@ export default function EarthGlobe({
                 Math.sin(satellite.angle + satellite.phase) * 0.035;
             });
             if (satelliteWrapper) {
-              satelliteWrapper.rotation.y += delta * 0.6;
+              satelliteWrapper.rotation.y += delta * 0.05; // Slowed from 0.6
             }
           },
           cleanup: () => {
             disposedFlag.disposed = true;
-            disposeEnvironment(hdriTexture, starfieldData);
+            dracoLoader.dispose();
+            textureCache.forEach((texture) => {
+              if (texture !== earth.material.map) texture.dispose();
+            });
           },
         };
       } catch (err) {

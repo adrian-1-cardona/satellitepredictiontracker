@@ -6,8 +6,9 @@ function createPanel(THREE, x) {
   const panel = new THREE.Mesh(
     new THREE.BoxGeometry(2.15, 0.08, 0.82),
     new THREE.MeshStandardMaterial({
-      color: 0x0f766e,
-      emissive: 0x063b36,
+      color: 0x1f4f67,
+      emissive: 0x000000,
+      emissiveIntensity: 0,
       metalness: 0.38,
       roughness: 0.42,
     }),
@@ -28,7 +29,8 @@ export default function Satellite({ className = "", compact = false }) {
         new THREE.BoxGeometry(1.08, 0.78, 0.92),
         new THREE.MeshStandardMaterial({
           color: 0xe8edf4,
-          emissive: 0x101828,
+          emissive: 0x000000,
+          emissiveIntensity: 0,
           metalness: 0.58,
           roughness: 0.24,
         }),
@@ -39,6 +41,8 @@ export default function Satellite({ className = "", compact = false }) {
         new THREE.BoxGeometry(0.82, 0.52, 0.98),
         new THREE.MeshStandardMaterial({
           color: 0x92a5b8,
+          emissive: 0x000000,
+          emissiveIntensity: 0,
           metalness: 0.72,
           roughness: 0.3,
         }),
@@ -68,7 +72,8 @@ export default function Satellite({ className = "", compact = false }) {
         new THREE.ConeGeometry(0.26, 0.45, 32, 1, true),
         new THREE.MeshStandardMaterial({
           color: 0xf59e0b,
-          emissive: 0x3a2100,
+          emissive: 0x000000,
+          emissiveIntensity: 0,
           metalness: 0.45,
           roughness: 0.36,
           side: THREE.DoubleSide,
@@ -93,8 +98,8 @@ export default function Satellite({ className = "", compact = false }) {
         new THREE.SphereGeometry(0.07, 16, 16),
         new THREE.MeshStandardMaterial({
           color: 0xf8fafc,
-          emissive: 0x0f766e,
-          emissiveIntensity: 0.8,
+          emissive: 0x000000,
+          emissiveIntensity: 0,
         }),
       );
       antennaTip.position.set(0, 1.22, -1.24);
@@ -106,10 +111,6 @@ export default function Satellite({ className = "", compact = false }) {
       const keyLight = new THREE.DirectionalLight(0xffffff, 2.4);
       keyLight.position.set(4, 3, 5);
       scene.add(keyLight);
-
-      const rimLight = new THREE.PointLight(0x14b8a6, 3.2, 12);
-      rimLight.position.set(-3, -1, 2.5);
-      scene.add(rimLight);
 
       return {
         animate: ({ delta, elapsed }) => {

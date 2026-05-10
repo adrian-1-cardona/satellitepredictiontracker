@@ -12,10 +12,18 @@ const ORBIT_SHELLS = [
     speed: 0.54,
     spin: 0.72,
     sizeRange: [0.044, 0.061],
-    color: "#7dd3fc",
-    trailColor: 0x6ee7ff,
-    trailOpacity: 0.2,
+    color: "#00b4d8",
+    trailColor: 0x00b4d8,
+    trailOpacity: 0.16,
     phaseOffset: 6,
+    namedSatellites: [
+      {
+        index: 0,
+        name: "CloudSat",
+        modelUrl: "/models/satellites/cloudsat.glb",
+        size: 0.078,
+      },
+    ],
   },
   {
     id: "leo-polar",
@@ -28,10 +36,18 @@ const ORBIT_SHELLS = [
     speed: 0.48,
     spin: 0.64,
     sizeRange: [0.047, 0.066],
-    color: "#bae6fd",
-    trailColor: 0xa5f3fc,
-    trailOpacity: 0.16,
+    color: "#93c5fd",
+    trailColor: 0x93c5fd,
+    trailOpacity: 0.13,
     phaseOffset: 21,
+    namedSatellites: [
+      {
+        index: 2,
+        name: "POES",
+        modelUrl: "/models/satellites/poes.glb",
+        size: 0.082,
+      },
+    ],
   },
   {
     id: "meo-navigation",
@@ -44,9 +60,9 @@ const ORBIT_SHELLS = [
     speed: 0.27,
     spin: 0.48,
     sizeRange: [0.055, 0.074],
-    color: "#fef3c7",
+    color: "#fbbf24",
     trailColor: 0xfacc15,
-    trailOpacity: 0.13,
+    trailOpacity: 0.1,
     phaseOffset: 12,
   },
   {
@@ -60,10 +76,18 @@ const ORBIT_SHELLS = [
     speed: 0.23,
     spin: 0.42,
     sizeRange: [0.052, 0.071],
-    color: "#c4b5fd",
-    trailColor: 0xc4b5fd,
-    trailOpacity: 0.12,
+    color: "#60a5fa",
+    trailColor: 0x60a5fa,
+    trailOpacity: 0.1,
     phaseOffset: 34,
+    namedSatellites: [
+      {
+        index: 4,
+        name: "Hubble",
+        modelUrl: "/models/satellites/hubble.glb",
+        size: 0.09,
+      },
+    ],
   },
   {
     id: "geo-belt",
@@ -78,7 +102,7 @@ const ORBIT_SHELLS = [
     sizeRange: [0.062, 0.086],
     color: "#fcd34d",
     trailColor: 0xf59e0b,
-    trailOpacity: 0.12,
+    trailOpacity: 0.09,
     phaseOffset: 3,
   },
 ];
@@ -118,7 +142,14 @@ export function generateConstellationOrbits({ seed = DEFAULT_SEED } = {}) {
 
   return ORBIT_SHELLS.map((shell) => {
     const spacing = 360 / shell.count;
+    const namedByIndex = new Map(
+      (shell.namedSatellites || []).map((satellite) => [
+        satellite.index,
+        satellite,
+      ]),
+    );
     const satellites = Array.from({ length: shell.count }, (_, index) => {
+      const namedSatellite = namedByIndex.get(index);
       const size =
         shell.sizeRange[0] +
         (shell.sizeRange[1] - shell.sizeRange[0]) * random();
@@ -129,13 +160,15 @@ export function generateConstellationOrbits({ seed = DEFAULT_SEED } = {}) {
 
       return {
         id: `${shell.id}-${String(index + 1).padStart(2, "0")}`,
+        name: namedSatellite?.name,
         angle: round((angle + 360) % 360, 3),
         type: shell.type,
         speed: round(speed),
         color: shell.color,
-        size: round(size),
+        size: round(namedSatellite?.size ?? size),
         spin: round(spin),
         roll: round(random() * 360, 3),
+        modelUrl: namedSatellite?.modelUrl,
       };
     });
 

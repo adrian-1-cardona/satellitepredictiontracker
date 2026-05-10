@@ -13,7 +13,7 @@
 //   - For each fc run: spy on `console.error`, attach an `unhandledrejection`
 //     listener to `window`, render `<EarthGlobe />`, await a microtask,
 //     unmount, and assert that no unhandled errors surfaced and that the
-//     orbit group's non-trail children list is empty.
+//     orbit group keeps a procedural fallback satellite.
 
 import { test, expect, vi } from "vitest";
 import { render, cleanup } from "@testing-library/react";
@@ -99,8 +99,7 @@ const errorArb = fc.oneof(
  *   - emitting a `console.error` from component code (informational
  *     `console.warn` is allowed per the design doc),
  *   - firing an `unhandledrejection` event on `window`,
- *   - leaving any non-trail children on the orbit group (the scene must
- *     render the Earth without a satellite when the glTF load fails).
+ *   - leaving the orbit without a fallback satellite when the glTF load fails.
  */
 test("scene errors from GLTFLoader / TextureLoader are contained without surfacing unhandled errors", async () => {
   await fc.assert(
@@ -156,17 +155,21 @@ test("scene errors from GLTFLoader / TextureLoader are contained without surfaci
         );
         expect(orbit).toBeTruthy();
 
-        // Property 6 assertion: when the glTF loader failed, the orbit group
-        // must not carry any satellite content; only the trail torus mesh
-        // is allowed to survive on the orbit.
-        const nonTrailChildren = orbit.children.filter((child) => {
-          const isTrailTorus =
-            child.isMesh &&
-            child.geometry &&
-            child.geometry.type === "TorusGeometry";
-          return !isTrailTorus;
+        // Property 6 assertion: when the glTF loader fails, the orbit group
+        // keeps a procedural fallback so the presentation never shows an
+        // empty orbit.
+        const fallbackWrapper = orbit.children.find(
+          (child) => child.name === "ISSSatelliteWrapper",
+        );
+        expect(fallbackWrapper).toBeTruthy();
+
+        let foundProceduralFallback = false;
+        fallbackWrapper.traverse((child) => {
+          if (child.userData?.isProceduralSatellite) {
+            foundProceduralFallback = true;
+          }
         });
-        expect(nonTrailChildren).toHaveLength(0);
+        expect(foundProceduralFallback).toBe(true);
 
         // No `console.error` should have originated from EarthGlobe's own
         // code path (it uses `console.warn` for the fallback message).

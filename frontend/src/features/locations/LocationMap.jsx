@@ -10,9 +10,10 @@ import {
   HorizontalOrigin,
   ImageryLayer,
   Math as CesiumMath,
-  OpenStreetMapImageryProvider,
+  Rectangle,
   ScreenSpaceEventHandler,
   ScreenSpaceEventType,
+  SingleTileImageryProvider,
   VerticalOrigin,
   Viewer,
 } from "cesium";
@@ -46,10 +47,10 @@ export default function Map({
 
     const viewer = new Viewer(containerRef.current, {
       animation: false,
-      baseLayer: new ImageryLayer(
-        new OpenStreetMapImageryProvider({
-          url: "https://tile.openstreetmap.org/",
-          credit: "OpenStreetMap contributors",
+      baseLayer: ImageryLayer.fromProviderAsync(
+        SingleTileImageryProvider.fromUrl("/textures/earth/earth-4k.jpg", {
+          rectangle: Rectangle.MAX_VALUE,
+          credit: "NASA Earth Observatory Blue Marble",
         }),
       ),
       baseLayerPicker: false,
@@ -78,6 +79,11 @@ export default function Map({
     });
 
     viewer.scene.globe.enableLighting = true;
+    viewer.scene.globe.showGroundAtmosphere = false;
+    viewer.scene.fog.enabled = false;
+    if (viewer.scene.postProcessStages?.bloom) {
+      viewer.scene.postProcessStages.bloom.enabled = false;
+    }
     viewer.scene.screenSpaceCameraController.minimumZoomDistance = 1000;
     viewer.scene.screenSpaceCameraController.maximumZoomDistance = 20000000;
     viewerRef.current = viewer;
@@ -211,4 +217,3 @@ export default function Map({
     </section>
   );
 }
-
