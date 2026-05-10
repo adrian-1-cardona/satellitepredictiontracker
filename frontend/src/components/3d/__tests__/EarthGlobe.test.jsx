@@ -86,6 +86,7 @@ vi.mock("three/examples/jsm/loaders/GLTFLoader.js", async () => {
 // The component must be imported AFTER the mocks are registered so its
 // module graph resolves against the stubs.
 import EarthGlobe from "../EarthGlobe.jsx";
+import { CONSTELLATION_SATELLITE_COUNT } from "../constellationData.js";
 
 // ---- Helpers --------------------------------------------------------------
 
@@ -130,6 +131,12 @@ function findEarthMesh(scene) {
     }
   });
   return earth;
+}
+
+function findConstellationRoot(scene) {
+  return scene.children.find(
+    (child) => child.name === "EarthSatelliteConstellation",
+  );
 }
 
 // ---- Lifecycle ------------------------------------------------------------
@@ -187,6 +194,25 @@ describe("EarthGlobe", () => {
       if (child.name === "LoadedGLTFMock") foundLoadedModel = true;
     });
     expect(foundLoadedModel).toBe(true);
+  });
+
+  test("renders a multi-plane procedural constellation around the ISS orbit", () => {
+    render(<EarthGlobe />);
+    const { scene } = globalThis.__CAPTURED_EARTH_GLOBE__;
+    expect(scene).toBeTruthy();
+
+    const constellationRoot = findConstellationRoot(scene);
+    expect(constellationRoot).toBeTruthy();
+    expect(constellationRoot.children).toHaveLength(5);
+
+    let satelliteCount = 0;
+    scene.traverse((child) => {
+      if (child.name?.startsWith("ConstellationSatellite:")) {
+        satelliteCount += 1;
+      }
+    });
+
+    expect(satelliteCount).toBe(CONSTELLATION_SATELLITE_COUNT);
   });
 
   test("no primitive box-body or cone-dish mesh survives from the old satellite", () => {

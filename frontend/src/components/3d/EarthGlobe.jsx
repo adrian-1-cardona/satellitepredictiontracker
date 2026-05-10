@@ -1,8 +1,19 @@
 import { useCallback, useRef } from "react";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { useThreeScene } from "../../hooks/useThreeScene.js";
-import { scaleModelToEarth } from "./satelliteScale.js";
+import { generateConstellationOrbits } from "./constellationData.js";
+import { createSatelliteGeometry } from "./SatelliteGeometry.js";
+import { scaleEarthGlobeSatelliteToEarth } from "./satelliteScale.js";
 import SceneContainer from "./SceneContainer.jsx";
+
+const EARTH_RADIUS = 1.4;
+const CAMERA_POSITION = [0, 0.2, 7.4];
+const ISS_ORBIT_RADIUS = 2.05;
+const ISS_INCLINATION_DEGREES = 26;
+const ISS_AZIMUTH_DEGREES = -12;
+const ISS_TARGET_RATIO = 0.145;
+const CONSTELLATION_BASE_SPEED = 0.72;
+const CONSTELLATION_REDUCED_BASE_SPEED = 0.18;
 
 /**
  * Walk an Object3D tree and dispose geometries, materials, and any textures
@@ -31,6 +42,41 @@ function disposeObjectTree(object) {
   });
 }
 
+function createOrbitTrail(
+  THREE,
+  {
+    radius,
+    color = 0x8edcff,
+    opacity = 0.18,
+    tubeRadius = 0.0024,
+    radialSegments = 6,
+    tubularSegments = 192,
+  },
+) {
+  const trail = new THREE.Mesh(
+    new THREE.TorusGeometry(radius, tubeRadius, radialSegments, tubularSegments),
+    new THREE.MeshBasicMaterial({
+      color,
+      transparent: true,
+      opacity,
+      depthWrite: false,
+    }),
+  );
+  trail.name = "OrbitTrail";
+  trail.rotation.x = Math.PI / 2;
+  return trail;
+}
+
+function positionSatelliteOnOrbit(wrapper, orbitRadius, angle, roll = 0) {
+  wrapper.position.set(
+    Math.cos(angle) * orbitRadius,
+    0,
+    Math.sin(angle) * orbitRadius,
+  );
+  wrapper.lookAt(0, 0, 0);
+  wrapper.rotateZ(roll);
+}
+
 /**
  * Photorealistic textured Earth with an orbiting glTF satellite (ISS) and soft
  * atmosphere. Used as the hero visual on the landing page.
@@ -57,7 +103,8 @@ export default function EarthGlobe({
         disposedFlagRef.current = { disposed: false };
         const disposedFlag = disposedFlagRef.current;
 
-        camera.position.set(0, 0.2, 4.3);
+        camera.position.set(...CAMERA_POSITION);
+        camera.lookAt(0, 0, 0);
 
         // ----- Earth
         const textureLoader = new THREE.TextureLoader();
@@ -65,7 +112,7 @@ export default function EarthGlobe({
         const specular = textureLoader.load("/textures/earth_specular.jpg");
         diffuse.colorSpace = THREE.SRGBColorSpace;
 
-        const earthRadius = 1.4;
+        const earthRadius = EARTH_RADIUS;
         const earth = new THREE.Mesh(
           new THREE.SphereGeometry(earthRadius, 96, 96),
           new THREE.MeshPhongMaterial({
@@ -103,24 +150,92 @@ export default function EarthGlobe({
         );
         scene.add(atmosphere);
 
-        // ----- Orbit group (inclined, carries the satellite and the trail ring)
-        const orbitRadius = 2.05;
+        // ----- ISS orbit group (inclined, carries the glTF and trail ring)
+        const orbitRadius = ISS_ORBIT_RADIUS;
         const orbit = new THREE.Group();
-        orbit.rotation.x = THREE.MathUtils.degToRad(26);
-        orbit.rotation.z = THREE.MathUtils.degToRad(-12);
+        orbit.name = "ISSOrbit";
+        orbit.rotation.x = THREE.MathUtils.degToRad(ISS_INCLINATION_DEGREES);
+        orbit.rotation.z = THREE.MathUtils.degToRad(ISS_AZIMUTH_DEGREES);
         scene.add(orbit);
 
         // Orbit trail ring (subtle, present even if the glTF model never loads)
-        const trail = new THREE.Mesh(
-          new THREE.TorusGeometry(orbitRadius, 0.003, 8, 128),
-          new THREE.MeshBasicMaterial({
+        orbit.add(
+          createOrbitTrail(THREE, {
+            radius: orbitRadius,
             color: 0x8edcff,
-            transparent: true,
             opacity: 0.22,
+            tubeRadius: 0.003,
+            radialSegments: 8,
+            tubularSegments: 128,
           }),
         );
-        trail.rotation.x = Math.PI / 2;
-        orbit.add(trail);
+
+        // ----- Procedural satellite constellation
+        const constellationSatellites = [];
+        const constellationRoot = new THREE.Group();
+        constellationRoot.name = "EarthSatelliteConstellation";
+        scene.add(constellationRoot);
+
+        generateConstellationOrbits().forEach((orbitConfig) => {
+          const orbitPlane = new THREE.Group();
+          orbitPlane.name = `ConstellationOrbit:${orbitConfig.id}`;
+          orbitPlane.rotation.x = THREE.MathUtils.degToRad(
+            orbitConfig.inclination,
+          );
+          orbitPlane.rotation.z = THREE.MathUtils.degToRad(orbitConfig.azimuth);
+          orbitPlane.userData = {
+            ...orbitPlane.userData,
+            orbitRadius: orbitConfig.orbitRadius,
+            satelliteCount: orbitConfig.satellites.length,
+          };
+          orbitPlane.add(
+            createOrbitTrail(THREE, {
+              radius: orbitConfig.orbitRadius,
+              color: orbitConfig.trailColor,
+              opacity: orbitConfig.trailOpacity,
+            }),
+          );
+
+          orbitConfig.satellites.forEach((satelliteConfig) => {
+            const satelliteWrapper = new THREE.Group();
+            satelliteWrapper.name = `ConstellationSatellite:${satelliteConfig.id}`;
+            const satelliteModel = createSatelliteGeometry(
+              satelliteConfig.type,
+              THREE,
+              { accentColor: satelliteConfig.color },
+            );
+            const scale = scaleEarthGlobeSatelliteToEarth(
+              satelliteModel.userData.longestSide,
+              earthRadius,
+              satelliteConfig.size,
+            );
+            if (scale <= 0) return;
+
+            const angle = THREE.MathUtils.degToRad(satelliteConfig.angle);
+            const roll = THREE.MathUtils.degToRad(satelliteConfig.roll);
+            satelliteModel.scale.setScalar(scale);
+            satelliteWrapper.add(satelliteModel);
+            positionSatelliteOnOrbit(
+              satelliteWrapper,
+              orbitConfig.orbitRadius,
+              angle,
+              roll,
+            );
+            orbitPlane.add(satelliteWrapper);
+            constellationSatellites.push({
+              wrapper: satelliteWrapper,
+              model: satelliteModel,
+              orbitRadius: orbitConfig.orbitRadius,
+              angle,
+              roll,
+              speed: satelliteConfig.speed,
+              spin: satelliteConfig.spin,
+              phase: angle,
+            });
+          });
+
+          constellationRoot.add(orbitPlane);
+        });
 
         // Created only after the glTF successfully loads. On load failure the
         // orbit group intentionally keeps only the trail torus.
@@ -141,7 +256,11 @@ export default function EarthGlobe({
               const box = new THREE.Box3().setFromObject(gltf.scene);
               const size = box.getSize(new THREE.Vector3());
               const longestSide = Math.max(size.x, size.y, size.z);
-              const scale = scaleModelToEarth(longestSide, earthRadius);
+              const scale = scaleEarthGlobeSatelliteToEarth(
+                longestSide,
+                earthRadius,
+                ISS_TARGET_RATIO,
+              );
               if (scale <= 0) {
                 disposeObjectTree(gltf.scene);
                 return;
@@ -155,7 +274,20 @@ export default function EarthGlobe({
               });
 
               satelliteWrapper = new THREE.Group();
+              satelliteWrapper.name = "ISSSatelliteWrapper";
               satelliteWrapper.position.set(orbitRadius, 0, 0);
+              const issGlow = new THREE.Mesh(
+                new THREE.SphereGeometry(earthRadius * 0.095, 24, 16),
+                new THREE.MeshBasicMaterial({
+                  color: 0x7dd3fc,
+                  transparent: true,
+                  opacity: 0.18,
+                  blending: THREE.AdditiveBlending,
+                  depthWrite: false,
+                }),
+              );
+              issGlow.name = "ISSSubtleGlow";
+              satelliteWrapper.add(issGlow);
               satelliteWrapper.add(gltf.scene);
               orbit.add(satelliteWrapper);
               onModelLoaded?.(gltf.scene);
@@ -190,8 +322,26 @@ export default function EarthGlobe({
           animate: ({ delta }) => {
             const earthSpeed = prefersReducedMotion ? 0.02 : 0.055;
             const orbitSpeed = prefersReducedMotion ? 0.08 : 0.32;
+            const constellationBaseSpeed = prefersReducedMotion
+              ? CONSTELLATION_REDUCED_BASE_SPEED
+              : CONSTELLATION_BASE_SPEED;
+            const selfSpinSpeed = prefersReducedMotion ? 0.16 : 0.54;
             earth.rotation.y += delta * earthSpeed;
             orbit.rotation.y += delta * orbitSpeed;
+            constellationSatellites.forEach((satellite) => {
+              satellite.angle +=
+                delta * constellationBaseSpeed * satellite.speed;
+              positionSatelliteOnOrbit(
+                satellite.wrapper,
+                satellite.orbitRadius,
+                satellite.angle,
+                satellite.roll,
+              );
+              satellite.model.rotation.y +=
+                delta * selfSpinSpeed * satellite.spin;
+              satellite.model.rotation.x =
+                Math.sin(satellite.angle + satellite.phase) * 0.035;
+            });
             if (satelliteWrapper) {
               satelliteWrapper.rotation.y += delta * 0.6;
             }
@@ -209,7 +359,7 @@ export default function EarthGlobe({
   );
 
   const containerRef = useThreeScene(setupScene, {
-    cameraPosition: [0, 0.2, 4.3],
+    cameraPosition: CAMERA_POSITION,
   });
 
   return (

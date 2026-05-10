@@ -5,7 +5,27 @@
 
 const MIN_RATIO = 0.03;
 const MAX_RATIO = 0.12;
-const DEFAULT_TARGET = 0.07;
+const DEFAULT_TARGET = 0.1;
+const EARTH_GLOBE_MIN_RATIO = 0.04;
+const EARTH_GLOBE_MAX_RATIO = 0.18;
+const EARTH_GLOBE_DEFAULT_TARGET = 0.14;
+
+function scaleToEarthRatio(
+  longestSide,
+  earthRadius,
+  target,
+  minRatio,
+  maxRatio,
+) {
+  if (!Number.isFinite(longestSide) || longestSide <= 0) return 0;
+  if (!Number.isFinite(earthRadius) || earthRadius <= 0) return 0;
+  if (!Number.isFinite(target)) return 0;
+
+  const diameter = 2 * earthRadius;
+  const clampedRatio = Math.min(maxRatio, Math.max(minRatio, target));
+
+  return (clampedRatio * diameter) / longestSide;
+}
 
 /**
  * Compute a uniform scale factor that sizes a model so its longest side
@@ -21,20 +41,43 @@ const DEFAULT_TARGET = 0.07;
  *
  * @param {number} longestSide - Longest side of the model's bounding box (world units, pre-scale).
  * @param {number} earthRadius - Radius of the Earth sphere in world units.
- * @param {number} [target=0.07] - Desired ratio of longest side to Earth diameter.
+ * @param {number} [target=0.1] - Desired ratio of longest side to Earth diameter.
  * @returns {number} Uniform scale factor, or `0` if inputs are invalid.
  */
-export function scaleModelToEarth(longestSide, earthRadius, target = DEFAULT_TARGET) {
-  if (!Number.isFinite(longestSide) || longestSide <= 0) return 0;
-  if (!Number.isFinite(earthRadius) || earthRadius <= 0) return 0;
-  if (!Number.isFinite(target)) return 0;
+export function scaleModelToEarth(
+  longestSide,
+  earthRadius,
+  target = DEFAULT_TARGET,
+) {
+  return scaleToEarthRatio(
+    longestSide,
+    earthRadius,
+    target,
+    MIN_RATIO,
+    MAX_RATIO,
+  );
+}
 
-  const diameter = 2 * earthRadius;
-
-  // Clamp the requested ratio into the allowed band before converting to a scale.
-  // This keeps (longestSide * s) / diameter in [MIN_RATIO, MAX_RATIO] regardless
-  // of the caller-supplied `target`.
-  const clampedRatio = Math.min(MAX_RATIO, Math.max(MIN_RATIO, target));
-
-  return (clampedRatio * diameter) / longestSide;
+/**
+ * Scale satellites used inside EarthGlobe's hero scene. This keeps the generic
+ * helper's historical [3%, 12%] sizing band intact while allowing the globe
+ * hero to make the ISS prominent and constellation satellites easier to see.
+ *
+ * @param {number} longestSide - Longest side of the model's bounding box.
+ * @param {number} earthRadius - Radius of the Earth sphere in world units.
+ * @param {number} [target=0.14] - Desired ratio of longest side to Earth diameter.
+ * @returns {number} Uniform scale factor, or `0` if inputs are invalid.
+ */
+export function scaleEarthGlobeSatelliteToEarth(
+  longestSide,
+  earthRadius,
+  target = EARTH_GLOBE_DEFAULT_TARGET,
+) {
+  return scaleToEarthRatio(
+    longestSide,
+    earthRadius,
+    target,
+    EARTH_GLOBE_MIN_RATIO,
+    EARTH_GLOBE_MAX_RATIO,
+  );
 }
