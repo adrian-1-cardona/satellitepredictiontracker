@@ -1,5 +1,5 @@
-import { LogOut, Radar, Satellite, Siren } from "lucide-react";
-import { Navigate, NavLink, Route, Routes, useNavigate } from "react-router-dom";
+import { Bell, Satellite, Search, Settings } from "lucide-react";
+import { Link, Navigate, NavLink, Route, Routes, useNavigate } from "react-router-dom";
 import { useAuth } from "./auth/AuthContext.jsx";
 import Alerts from "./pages/Alerts.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
@@ -22,30 +22,46 @@ function AppShell({ children }) {
 
   return (
     <div className="app-shell">
-      <header className="topbar">
+      <header className="topbar orbit-topbar">
         <NavLink to="/dashboard" className="brand" aria-label="Satellite Tracker dashboard">
           <span className="brand-mark">
-            <Satellite size={21} aria-hidden="true" />
+            <Satellite size={25} aria-hidden="true" />
           </span>
-          <span>Satellite Tracker</span>
         </NavLink>
 
         <nav className="topnav" aria-label="Primary navigation">
           <NavLink to="/dashboard">
-            <Radar size={17} aria-hidden="true" />
-            <span>Dashboard</span>
+            <span>Home</span>
           </NavLink>
-          <NavLink to="/alerts">
-            <Siren size={17} aria-hidden="true" />
-            <span>Alerts</span>
-          </NavLink>
+          <span className="nav-ghost">
+            <span>Satellite</span>
+          </span>
+          <span className="nav-ghost">
+            <span>Orbits</span>
+          </span>
+          <Link to="/alerts" className="nav-ghost">
+            <span>Releases</span>
+          </Link>
         </nav>
 
         <div className="account-strip">
-          <span title={user?.email}>{user?.email}</span>
-          <button type="button" className="icon-text-button" onClick={handleLogout}>
-            <LogOut size={17} aria-hidden="true" />
-            <span>Logout</span>
+          <button type="button" className="round-action" title="Search">
+            <Search size={23} aria-hidden="true" />
+          </button>
+          <NavLink to="/alerts" className="round-action" title="Alerts">
+            <Bell size={21} aria-hidden="true" />
+          </NavLink>
+          <button type="button" className="round-action" title="Settings">
+            <Settings size={22} aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            className="profile-avatar"
+            onClick={handleLogout}
+            title={`Logout ${user?.email || ""}`}
+          >
+            <span className="avatar-face" aria-hidden="true" />
+            <span className="sr-only">Logout</span>
           </button>
         </div>
       </header>

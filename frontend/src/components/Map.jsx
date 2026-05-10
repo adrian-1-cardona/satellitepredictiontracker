@@ -11,7 +11,6 @@ import {
   HorizontalOrigin,
   ImageryLayer,
   Math as CesiumMath,
-  OpenStreetMapImageryProvider,
   ScreenSpaceEventHandler,
   ScreenSpaceEventType,
   TileMapServiceImageryProvider,
@@ -66,14 +65,6 @@ export default function Map({
       terrainProvider: new EllipsoidTerrainProvider(),
     });
 
-    const osmLayer = viewer.imageryLayers.addImageryProvider(
-      new OpenStreetMapImageryProvider({
-        url: "https://tile.openstreetmap.org/",
-        credit: "OpenStreetMap contributors",
-      }),
-    );
-    osmLayer.alpha = 0.85;
-
     viewer.scene.globe.enableLighting = true;
     viewer.scene.screenSpaceCameraController.minimumZoomDistance = 1000;
     viewer.scene.screenSpaceCameraController.maximumZoomDistance = 20000000;
@@ -101,7 +92,7 @@ export default function Map({
     clickHandlerRef.current = handler;
 
     viewer.camera.setView({
-      destination: Cartesian3.fromDegrees(-98.5795, 39.8283, 5600000),
+      destination: Cartesian3.fromDegrees(20, 22, 6400000),
     });
 
     return () => {
