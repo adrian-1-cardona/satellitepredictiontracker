@@ -5,11 +5,18 @@ on:
     branches: [main, devop]
     paths:
       - backend/**
+      - .env
+      - .env.example
+      - .gitignore
       - .github/workflows/backend-tests.yml
   pull_request:
     branches: [main]
     paths:
       - backend/**
+      - .env
+      - .env.example
+      - .gitignore
+      - .github/workflows/backend-tests.yml
 
 jobs:
   test:
