@@ -1,0 +1,24 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Preserve existing CSS custom properties and space theme */
+@layer base {
+  :root {
+    --primary: #4ade80;
+    --success: #22c55e;
+    --danger: #ef4444;
+    --warning: #f59e0b;
+    --muted: rgba(148, 163, 184, 0.7);
+    --bg-1: #0a121f;
+    --bg-2: #0f1829;
+  }
+
+  body {
+    background-color: var(--bg-1);
+    color: #f8fbff;
+  }
+}
+
+/* Import existing utility styles that need to be preserved */
+/* This will be progressively migrated to Tailwind classes */

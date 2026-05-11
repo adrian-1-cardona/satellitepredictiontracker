@@ -16,5 +16,6 @@ venv/
 data/*.tle
 
 .DS_Store
+.hypothesis/
 
 backend/.env
