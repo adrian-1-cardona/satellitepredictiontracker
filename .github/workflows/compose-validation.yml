@@ -5,11 +5,18 @@ on:
     branches: [main, devop]
     paths:
       - backend/docker-compose.yml
+      - .env
+      - .env.example
+      - .gitignore
       - .github/workflows/compose-validation.yml
   pull_request:
     branches: [main]
     paths:
       - backend/docker-compose.yml
+      - .env
+      - .env.example
+      - .gitignore
+      - .github/workflows/compose-validation.yml
 
 jobs:
   validate:
