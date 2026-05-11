@@ -2,6 +2,8 @@ from app.auth import issue_tokens
 from app.models import User
 
 
+
+
 class TestLocationErrorScenarios:
     """Test error cases for location management."""
 
