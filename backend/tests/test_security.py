@@ -19,7 +19,7 @@ client = TestClient(app)
 class TestAccessControl:
     """A01:2021 – Broken Access Control"""
 
-    def test_user_cannot_access_other_user_location(self, db_session):
+    def test_user_cannot_access_other_user_location(self, client, db_session):
         """User A cannot access User B's location."""
         # Create two users
         user_a = User(email="usera@test.com", password_hash="hash_a")
@@ -78,7 +78,14 @@ class TestCryptography:
 
     def test_passwords_never_stored_plaintext(self, db_session):
         """Passwords are hashed, never plaintext."""
-        user = User(email="test@test.com", password_hash="bcrypt_hash")
+        import bcrypt
+
+        # Create actual bcrypt hash
+        password = "TestPassword123!"
+        salt = bcrypt.gensalt()
+        hash_password = bcrypt.hashpw(password.encode(), salt).decode('utf-8')
+
+        user = User(email="test@test.com", password_hash=hash_password)
         db_session.add(user)
         db_session.commit()
 
@@ -131,7 +138,7 @@ class TestInjection:
         # Should return empty result, not execute drop table
         assert result == []
 
-    def test_xss_payload_in_location_name_is_escaped(self, auth_headers):
+    def test_xss_payload_in_location_name_is_escaped(self, client, auth_headers):
         """XSS payloads in user input are escaped."""
         xss_payload = '<img src=x onerror="alert(\'xss\')">'
 
@@ -167,7 +174,7 @@ class TestInsecureDesign:
         # Test: Make 5+ login attempts rapidly, should get 429
         pass
 
-    def test_invalid_input_rejected_with_422(self):
+    def test_invalid_input_rejected_with_422(self, client, auth_headers):
         """Invalid input returns 422, not 200."""
         response = client.post(
             "/api/v1/locations",
@@ -176,6 +183,7 @@ class TestInsecureDesign:
                 "latitude": 999,  # Invalid: > 90
                 "longitude": -74.0,
             },
+            headers=auth_headers,
         )
 
         assert response.status_code == 422  # Unprocessable Entity
@@ -311,7 +319,9 @@ class TestDataIntegrity:
     def test_dependencies_pinned(self):
         """Dependencies are pinned to specific versions."""
         # Check requirements.txt has specific versions
-        with open("backend/requirements.txt") as f:
+        import pathlib
+        requirements_path = pathlib.Path(__file__).parent.parent / "requirements.txt"
+        with open(requirements_path) as f:
             content = f.read()
             # Should have exact versions (==), not * or >=
             lines_with_exact_version = [line for line in content.split("\n") if "==" in line]
@@ -371,14 +381,3 @@ def create_test_token(user_id: int, expires_in_seconds: int = 3600):
 
     token = jwt.encode(payload, SECRET_KEY, algorithm="HS256")
     return token
-
-
-@pytest.fixture
-def auth_headers(db_session):
-    """Fixture: Valid auth headers for testing."""
-    user = User(email="testuser@test.com", password_hash="hash")
-    db_session.add(user)
-    db_session.commit()
-
-    token = create_test_token(user.id)
-    return {"Authorization": f"Bearer {token}"}

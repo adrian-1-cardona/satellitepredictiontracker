@@ -4,6 +4,7 @@ Comprehensive error scenario tests - covers happy and sad paths.
 Run: python -m pytest tests/test_error_scenarios.py -v
 """
 
+import os
 import pytest
 from fastapi.testclient import TestClient
 from app.main import app
