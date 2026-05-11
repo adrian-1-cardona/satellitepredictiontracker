@@ -39,6 +39,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+def handle_satellite_tracker_error(request: Request, exc: Exception):
+    if isinstance(exc, SatelliteTrackerError):
+        return satellite_tracker_exception_handler(request, exc)
+    raise exc
+
+app.add_exception_handler(SatelliteTrackerError, handle_satellite_tracker_error)
+
 
 @app.middleware("http")
 async def request_context(request: Request, call_next):
