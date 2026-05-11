@@ -25,18 +25,27 @@ def reset_database() -> Generator[None, None, None]:
 
 
 @pytest.fixture()
-def client() -> Generator[TestClient, None, None]:
+def client(db_session) -> Generator[TestClient, None, None]:
     def override_get_db():
-        db = database.SessionLocal()
         try:
-            yield db
+            yield db_session
         finally:
-            db.close()
+            pass  # Don't close the session, conftest controls its lifecycle
 
     app.dependency_overrides[get_db] = override_get_db
     with TestClient(app) as test_client:
         yield test_client
     app.dependency_overrides.clear()
+
+
+@pytest.fixture()
+def db_session() -> Generator[database.SessionLocal, None, None]:
+    """Provide a database session for tests."""
+    db = database.SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
 
 @pytest.fixture()
