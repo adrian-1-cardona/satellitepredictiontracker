@@ -7,8 +7,10 @@ on:
       - backend/**
       - frontend/**
       - .github/workflows/docker-build.yml
-      - docker-compose.yml
-      - Dockerfile*
+      - docker-compose*.yml
+      - backend/docker-compose.yml
+      - backend/Dockerfile*
+      - frontend/Dockerfile*
 
 jobs:
   build-and-push:
@@ -31,7 +33,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract metadata (backend)
+      - name: Extract metadata for backend
         id: meta-backend
         uses: docker/metadata-action@v5
         with:
@@ -53,7 +55,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Extract metadata (frontend)
+      - name: Extract metadata for frontend
         id: meta-frontend
         uses: docker/metadata-action@v5
         with:

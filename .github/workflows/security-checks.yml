@@ -4,14 +4,19 @@ on:
   push:
     branches: [main, devop]
     paths:
+      - backend/app/**
       - backend/requirements.txt
       - frontend/package.json
+      - frontend/package-lock.json
       - .github/workflows/security-checks.yml
   pull_request:
     branches: [main]
     paths:
+      - backend/app/**
       - backend/requirements.txt
       - frontend/package.json
+      - frontend/package-lock.json
+      - .github/workflows/security-checks.yml
   schedule:
     - cron: '0 0 * * 0'  # Weekly on Sunday
 
@@ -33,7 +38,7 @@ jobs:
       - name: Install dependencies
         working-directory: backend
         run: |
-          pip install --upgrade pip
+          python -m pip install --upgrade pip
           pip install -r requirements.txt
 
       - name: Run bandit security check
