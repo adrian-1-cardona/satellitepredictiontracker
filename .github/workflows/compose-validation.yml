@@ -1,0 +1,40 @@
+name: Docker Compose Validation
+
+on:
+  push:
+    branches: [main, devop]
+    paths:
+      - backend/docker-compose.yml
+      - .env
+      - .env.example
+      - .gitignore
+      - .github/workflows/compose-validation.yml
+  pull_request:
+    branches: [main]
+    paths:
+      - backend/docker-compose.yml
+      - .env
+      - .env.example
+      - .gitignore
+      - .github/workflows/compose-validation.yml
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate Docker Compose configuration
+        working-directory: backend
+        run: docker compose config --quiet
+
+      - name: Check for invalid volume paths
+        working-directory: backend
+        run: |
+          if grep -q 'frontend/' docker-compose.yml; then
+            echo "ERROR: docker-compose.yml contains frontend paths"
+            exit 1
+          fi
+          echo "✓ No frontend paths found in compose config"

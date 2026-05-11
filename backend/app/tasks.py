@@ -11,6 +11,9 @@ from app.models import Alert, AlertHistory, JobHistory, Location, SatellitePass,
 from app.satellites import load_tle_records, predict_passes
 
 
+# Hardcoded TLE URL for security (not user-configurable at runtime)
+SKYFIELD_TLE_URL = "https://celestrak.org/NORAD/elements/stations.txt"
+
 settings = get_settings()
 celery_app = Celery("satellite_tracker", broker=settings.broker_url, backend=settings.result_backend)
 celery_app.conf.timezone = "UTC"

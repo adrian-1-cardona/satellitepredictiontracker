@@ -1,0 +1,230 @@
+# Production Docker Compose Stack for Satellite Tracker
+# Includes: Frontend, API, Celery workers, PostgreSQL, Redis, Prometheus, Grafana, Loki
+
+version: '3.9'
+
+services:
+  # Frontend web server
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+    container_name: satellite-tracker-frontend
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+    labels:
+      - "app=satellite-tracker"
+      - "component=frontend"
+
+  # API backend
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: satellite-tracker-api
+    env_file:
+      - ../.env
+    environment:
+      DATABASE_URL: postgresql+psycopg2://tracker:${DB_PASSWORD:-tracker_password}@postgres:5432/satellite_tracker
+      REDIS_URL: redis://redis:6379
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/1
+      APP_PRODUCTION: "true"
+      LOG_FORMAT: json
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ../data:/app/data
+    restart: unless-stopped
+    labels:
+      - "app=satellite-tracker"
+      - "component=api"
+
+  # Celery background worker
+  celery_worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: satellite-tracker-worker
+    command: celery -A app.tasks:celery_app worker --loglevel=info --concurrency=4
+    env_file:
+      - ../.env
+    environment:
+      DATABASE_URL: postgresql+psycopg2://tracker:${DB_PASSWORD:-tracker_password}@postgres:5432/satellite_tracker
+      REDIS_URL: redis://redis:6379
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/1
+      APP_PRODUCTION: "true"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ../data:/app/data
+    restart: unless-stopped
+    labels:
+      - "app=satellite-tracker"
+      - "component=celery-worker"
+
+  # Celery beat scheduler
+  celery_beat:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: satellite-tracker-beat
+    command: celery -A app.tasks:celery_app beat --loglevel=info
+    env_file:
+      - ../.env
+    environment:
+      DATABASE_URL: postgresql+psycopg2://tracker:${DB_PASSWORD:-tracker_password}@postgres:5432/satellite_tracker
+      REDIS_URL: redis://redis:6379
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/1
+      APP_PRODUCTION: "true"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ../data:/app/data
+    restart: unless-stopped
+    labels:
+      - "app=satellite-tracker"
+      - "component=celery-beat"
+
+  # PostgreSQL database
+  postgres:
+    image: postgres:16-alpine
+    container_name: satellite-tracker-postgres
+    environment:
+      POSTGRES_DB: satellite_tracker
+      POSTGRES_USER: tracker
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-tracker_password}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tracker -d satellite_tracker"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    labels:
+      - "app=satellite-tracker"
+      - "component=database"
+
+  # Redis cache & broker
+  redis:
+    image: redis:7-alpine
+    container_name: satellite-tracker-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    labels:
+      - "app=satellite-tracker"
+      - "component=cache"
+
+  # Prometheus metrics
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: satellite-tracker-prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    depends_on:
+      api:
+        condition: service_started
+    restart: unless-stopped
+    labels:
+      - "app=satellite-tracker"
+      - "component=monitoring"
+
+  # Grafana dashboards
+  grafana:
+    image: grafana/grafana:latest
+    container_name: satellite-tracker-grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin}
+      GF_INSTALL_PLUGINS: 'grafana-piechart-panel'
+    ports:
+      - "3001:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      prometheus:
+        condition: service_started
+      loki:
+        condition: service_started
+    restart: unless-stopped
+    labels:
+      - "app=satellite-tracker"
+      - "component=monitoring"
+
+  # Loki logs
+  loki:
+    image: grafana/loki:latest
+    container_name: satellite-tracker-loki
+    command: -config.file=/etc/loki/local-config.yml
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./loki-config.yml:/etc/loki/local-config.yml:ro
+      - loki_data:/loki
+    restart: unless-stopped
+    labels:
+      - "app=satellite-tracker"
+      - "component=logging"
+
+  # Promtail log agent
+  promtail:
+    image: grafana/promtail:latest
+    container_name: satellite-tracker-promtail
+    command: -config.file=/etc/promtail/config.yml
+    volumes:
+      - ./promtail-config.yml:/etc/promtail/config.yml:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      loki:
+        condition: service_started
+    restart: unless-stopped
+    labels:
+      - "app=satellite-tracker"
+      - "component=logging"
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+  loki_data:
+    driver: local
+
+networks:
+  default:
+    name: satellite-tracker-network
