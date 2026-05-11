@@ -40,6 +40,16 @@ def client() -> Generator[TestClient, None, None]:
 
 
 @pytest.fixture()
+def db_session() -> Generator[database.SessionLocal, None, None]:
+    """Provide a database session for tests."""
+    db = database.SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+
+@pytest.fixture()
 def auth_headers(client: TestClient) -> dict[str, str]:
     response = client.post(
         "/api/v1/auth/register",
