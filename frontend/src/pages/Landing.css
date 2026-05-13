@@ -36,6 +36,7 @@
 .hero-title {
   font-size: 3rem;
   font-weight: 700;
+  font-family: Bungee;
   letter-spacing: -0.02em;
   color: var(--ink);
   margin: 0 0 1rem 0;
