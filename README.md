@@ -45,6 +45,10 @@ prometheus_1 | ts=... msg="Server is ready to receive web requests."
 cd frontend
 npm install
 npm run dev
+##in case of errors you may need to kill pid , do this to list all pids:
+lsof -i :3000
+##then kill it
+kill -9 <yourpid>
 ```
 
 **Step 4: Open in browser**
