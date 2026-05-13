@@ -191,8 +191,8 @@ export default function EarthGlobe({
 
         camera.position.set(...CAMERA_POSITION);
         camera.lookAt(0, 0, 0);
-        scene.background = new THREE.Color(0x000000);
-        renderer?.setClearColor?.(0x000000, 1);
+        scene.background = null;
+        renderer?.setClearColor?.(0x000000, 0);
 
         // ----- Earth
         const textureLoader = new THREE.TextureLoader();

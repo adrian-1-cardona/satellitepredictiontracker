@@ -31,11 +31,7 @@ export default function Landing() {
       />
       <div className="hero-overlay">
         <div className="hero-content">
-          <h1 className="hero-title">Satellite Prediction Tracker</h1>
-          <p className="hero-subtitle">
-            Real-time pass prediction and orbital visualization for
-            mission-critical satellite awareness.
-          </p>
+          <h1 className="hero-title">SatellitePass</h1>
         </div>
         <StatusIndicator />
       </div>
