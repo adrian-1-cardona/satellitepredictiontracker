@@ -31,7 +31,7 @@ export default function Landing() {
       />
       <div className="hero-overlay">
         <div className="hero-content">
-          <h1 className="hero-title">SatellitePass</h1>
+          <h1 className="hero-title">Satellite Pass</h1>
         </div>
         <StatusIndicator />
       </div>
