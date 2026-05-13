@@ -15,8 +15,8 @@ import {
   ScreenSpaceEventType,
   SingleTileImageryProvider,
   VerticalOrigin,
-  Viewer,
-} from "cesium";
+} from "@cesium/engine";
+import { Viewer } from "@cesium/widgets";
 
 function toNumber(value) {
   const number = Number(value);
