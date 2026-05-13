@@ -34,6 +34,20 @@ VITE_API_BASE_URL=http://localhost:8000/api/v1
 
 For production, set `VITE_API_BASE_URL` to the deployed FastAPI `/api/v1` URL before running `npm run build`.
 
+## Troubleshooting
+
+### "Cannot find module './fs'" Error
+
+If you encounter this error when running `npm run dev`, clean and reinstall dependencies:
+
+```bash
+rm -rf node_modules package-lock.json
+npm install
+npm run dev
+```
+
+This typically occurs with Node.js v22+ due to dependency conflicts with older versions of `fs-extra` used by `vite-plugin-cesium`. The clean reinstall ensures all dependencies are compatible with your Node.js version.
+
 ## Backend Requirements
 
 Start the FastAPI backend on `http://localhost:8000` and make sure PostgreSQL/Redis are running as described in `../backend/BACKEND_SETUP.md`.
