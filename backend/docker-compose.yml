@@ -4,7 +4,7 @@ services:
     environment:
       POSTGRES_DB: satellite_tracker
       POSTGRES_USER: tracker
-      POSTGRES_PASSWORD: tracker_dev_password
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-tracker_dev_password}
     ports:
       - "5432:5432"
     volumes:
@@ -32,11 +32,11 @@ services:
     env_file:
       - ../.env
     environment:
-      DATABASE_URL: postgresql+psycopg2://tracker:tracker_dev_password@postgres:5432/satellite_tracker
+      DATABASE_URL: postgresql+psycopg2://tracker:${DB_PASSWORD:-tracker_dev_password}@postgres:5432/satellite_tracker
       REDIS_URL: redis://redis:6379
       CELERY_BROKER_URL: redis://redis:6379/0
       CELERY_RESULT_BACKEND: redis://redis:6379/1
-      SECRET_KEY: dev-secret-key-change-in-production-min-32-chars
+      SECRET_KEY: ${SECRET_KEY:-dev-secret-key-change-in-production-min-32-chars}
       TLE_CACHE_PATH: data/stations.tle
     ports:
       - "8000:8000"
@@ -56,11 +56,11 @@ services:
     env_file:
       - ../.env
     environment:
-      DATABASE_URL: postgresql+psycopg2://tracker:tracker_dev_password@postgres:5432/satellite_tracker
+      DATABASE_URL: postgresql+psycopg2://tracker:${DB_PASSWORD:-tracker_dev_password}@postgres:5432/satellite_tracker
       REDIS_URL: redis://redis:6379
       CELERY_BROKER_URL: redis://redis:6379/0
       CELERY_RESULT_BACKEND: redis://redis:6379/1
-      SECRET_KEY: dev-secret-key-change-in-production-min-32-chars
+      SECRET_KEY: ${SECRET_KEY:-dev-secret-key-change-in-production-min-32-chars}
       TLE_CACHE_PATH: data/stations.tle
     depends_on:
       postgres:
@@ -78,11 +78,11 @@ services:
     env_file:
       - ../.env
     environment:
-      DATABASE_URL: postgresql+psycopg2://tracker:tracker_dev_password@postgres:5432/satellite_tracker
+      DATABASE_URL: postgresql+psycopg2://tracker:${DB_PASSWORD:-tracker_dev_password}@postgres:5432/satellite_tracker
       REDIS_URL: redis://redis:6379
       CELERY_BROKER_URL: redis://redis:6379/0
       CELERY_RESULT_BACKEND: redis://redis:6379/1
-      SECRET_KEY: dev-secret-key-change-in-production-min-32-chars
+      SECRET_KEY: ${SECRET_KEY:-dev-secret-key-change-in-production-min-32-chars}
       TLE_CACHE_PATH: data/stations.tle
     depends_on:
       postgres:
@@ -95,8 +95,8 @@ services:
   pgadmin:
     image: dpage/pgadmin4:8
     environment:
-      PGADMIN_DEFAULT_EMAIL: admin@tracker.local
-      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-admin@tracker.local}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin}
     ports:
       - "5050:80"
     depends_on:
@@ -120,8 +120,8 @@ services:
   grafana:
     image: grafana/grafana:latest
     environment:
-      GF_SECURITY_ADMIN_USER: admin
-      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin}
       GF_INSTALL_PLUGINS: grafana-piechart-panel
     ports:
       - "3001:3000"
@@ -155,4 +155,3 @@ volumes:
   prometheus_data:
   grafana_data:
   loki_data:
-

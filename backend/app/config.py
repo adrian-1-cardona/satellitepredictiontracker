@@ -1,7 +1,15 @@
 from functools import lru_cache
 
-from pydantic import Field
+from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+DEFAULT_SECRET_KEY = "dev-secret-key-change-in-production-min-32-chars"
+PLACEHOLDER_SECRET_KEYS = {
+    DEFAULT_SECRET_KEY,
+    "dev-secret-key-change-before-production-min-32-chars",
+    "your-secret-key-here-min-32-chars",
+}
 
 
 class Settings(BaseSettings):
@@ -19,7 +27,7 @@ class Settings(BaseSettings):
     db_pool_size: int = Field(10, alias="DB_POOL_SIZE")
     db_max_overflow: int = Field(20, alias="DB_MAX_OVERFLOW")
 
-    secret_key: str = Field("dev-secret-key-change-in-production-min-32-chars", alias="SECRET_KEY")
+    secret_key: str = Field(DEFAULT_SECRET_KEY, alias="SECRET_KEY")
     jwt_algorithm: str = Field("HS256", alias="JWT_ALGORITHM")
     access_token_expire_minutes: int = Field(15, alias="ACCESS_TOKEN_EXPIRE_MINUTES")
     refresh_token_expire_days: int = Field(7, alias="REFRESH_TOKEN_EXPIRE_DAYS")
@@ -43,6 +51,18 @@ class Settings(BaseSettings):
     admin_token: str = Field("", alias="ADMIN_TOKEN")  # Required in production for private docs
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
+
+    @model_validator(mode="after")
+    def validate_production_settings(self) -> "Settings":
+        if not self.production:
+            return self
+
+        if self.debug:
+            raise ValueError("APP_DEBUG must be false when APP_PRODUCTION is true")
+        if len(self.secret_key) < 32 or self.secret_key in PLACEHOLDER_SECRET_KEYS:
+            raise ValueError("SECRET_KEY must be a non-placeholder value of at least 32 characters in production")
+
+        return self
 
     @property
     def cors_origins(self) -> list[str]:
