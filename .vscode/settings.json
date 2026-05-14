@@ -17,19 +17,5 @@
   "editor.trimAutoWhitespace": true,
   "files.trimTrailingWhitespace": true,
   "files.insertFinalNewline": true,
-  "git.ignoreLimitWarning": true,
-  "sqltools.defaultConnection": "satellite_tracker",
-  "sqltools.connections": [
-    {
-      "name": "satellite_tracker",
-      "driver": "PostgreSQL",
-      "host": "localhost",
-      "port": 5432,
-      "database": "satellite_tracker",
-      "username": "tracker",
-      "password": "tracker_dev_password",
-      "ssl": false,
-      "askForPassword": false
-    }
-  ]
+  "git.ignoreLimitWarning": true
 }

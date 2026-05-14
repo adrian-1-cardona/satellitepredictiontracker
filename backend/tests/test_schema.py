@@ -20,7 +20,7 @@ def test_expected_tables_and_indexes_exist() -> None:
     }
     assert expected.issubset(set(inspector.get_table_names()))
 
-    pass_indexes = {idx["name"] for idx in inspector.get_indexes("passes")}
+    pass_indexes = {idx.name for idx in SatellitePass.__table__.indexes}
     assert {"idx_passes_location_id", "idx_passes_rise_time", "idx_passes_satellite_name"}.issubset(pass_indexes)
 
 

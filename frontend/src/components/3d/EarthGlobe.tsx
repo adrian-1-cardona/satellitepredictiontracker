@@ -45,7 +45,7 @@ function disposeObjectTree(object) {
   if (!object) return;
   const disposeMaterial = (material) => {
     if (!material) return;
-    Object.values(material).forEach((value) => {
+    Object.values(material as Record<string, any>).forEach((value: any) => {
       if (value?.isTexture) value.dispose();
     });
     material.dispose?.();
@@ -177,7 +177,7 @@ function positionSatelliteOnOrbit(wrapper, orbitRadius, angle, roll = 0) {
 export default function EarthGlobe({
   className = "",
   modelUrl = "/models/iss.glb",
-  onModelLoaded,
+  onModelLoaded = undefined,
 }) {
   // Tracks whether the scene has been torn down. A fresh object is minted each
   // setup so the previous closure's flag stays frozen and truthful.

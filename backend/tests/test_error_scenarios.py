@@ -124,7 +124,7 @@ class TestLocationErrorScenarios:
             "longitude": -74.0,
         }
 
-        response = client.put(
+        response = client.patch(
             f"/api/v1/locations/{location_id}",
             json=update_data,
             headers=auth_headers,
@@ -234,10 +234,10 @@ class TestPassPredictionErrorScenarios:
 
     def test_predict_without_required_fields(self, client, auth_headers):
         """Predicting without required fields fails."""
-        incomplete_data = {"name": "Incomplete"}
+        incomplete_data = {"days_ahead": 12}
 
         response = client.post(
-            "/api/v1/passes/predict",
+            "/api/v1/passes/refresh",
             json=incomplete_data,
             headers=auth_headers,
         )
@@ -246,14 +246,10 @@ class TestPassPredictionErrorScenarios:
 
     def test_predict_with_invalid_coordinates(self, client, auth_headers):
         """Prediction with invalid coordinates fails."""
-        invalid_data = {
-            "name": "Invalid",
-            "latitude": 150,
-            "longitude": -74.0,
-        }
+        invalid_data = {"location_id": 1, "days_ahead": 0}
 
         response = client.post(
-            "/api/v1/passes/predict",
+            "/api/v1/passes/refresh",
             json=invalid_data,
             headers=auth_headers,
         )
