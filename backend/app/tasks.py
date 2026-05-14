@@ -18,6 +18,12 @@ settings = get_settings()
 celery_app = Celery("satellite_tracker", broker=settings.broker_url, backend=settings.result_backend)
 celery_app.conf.timezone = "UTC"
 celery_app.conf.task_track_started = True
+celery_app.conf.task_ignore_result = True
+
+if settings.database_url.startswith("sqlite"):
+    celery_app.conf.task_always_eager = True
+    celery_app.conf.task_eager_propagates = True
+    celery_app.conf.task_store_eager_result = False
 
 
 def record_job(db: Session, task_id: str, job_type: str, status: str, progress: int = 0, result: str | None = None, error: str | None = None) -> JobHistory:

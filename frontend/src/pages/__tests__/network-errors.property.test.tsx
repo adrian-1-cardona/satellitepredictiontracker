@@ -74,7 +74,9 @@ vi.mock("three/examples/jsm/loaders/GLTFLoader.js", () => ({
 // `clearStoredAuth`, `logoutUser`, `getErrorMessage`) intact so AuthContext
 // and the auth forms continue to behave normally.
 vi.mock("../../api/client.js", async () => {
-  const actual = await vi.importActual("../../api/client.js");
+  const actual = await vi.importActual<typeof import("../../api/client.js")>(
+    "../../api/client.js",
+  );
   return {
     ...actual,
     api: { ...actual.api, head: vi.fn() },
