@@ -40,7 +40,9 @@ import * as THREE from "three";
 // Stub the health probe so the StatusIndicator effect does not issue real
 // HTTP requests during the 100 property iterations.
 vi.mock("../../api/client.js", async () => {
-  const actual = await vi.importActual("../../api/client.js");
+  const actual = await vi.importActual<typeof import("../../api/client.js")>(
+    "../../api/client.js",
+  );
   return {
     ...actual,
     api: { ...actual.api, head: vi.fn().mockResolvedValue({ status: 200 }) },

@@ -376,6 +376,7 @@ def create_test_token(user_id: int, expires_in_seconds: int = 3600):
 
     payload = {
         "sub": str(user_id),
+        "type": "access",
         "exp": datetime.utcnow() + timedelta(seconds=expires_in_seconds),
     }
 
