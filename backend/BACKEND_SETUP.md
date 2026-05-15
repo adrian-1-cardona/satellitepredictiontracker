@@ -87,11 +87,13 @@ celery -A app.tasks:celery_app beat --loglevel=info
 - **Docker**: invoke Compose from `backend/` with `--env-file ../.env` (as shown in the quickstart above). Equivalent from the workspace root: `docker compose -f backend/docker-compose.yml --env-file .env up --build`.
 - **Local (non-Docker)**: run from the workspace-root CWD so `pydantic-settings` picks up `.env` automatically, or pass an explicit path via `ENV_FILE=../.env` when running from `backend/`. Uvicorn and Celery both honour the process CWD, so launching them from the workspace root with module paths (`uvicorn app.main:app --app-dir backend`) is equivalent.
 
-If `.env` is missing, copy the example:
+The repository includes a root `.env` with development-only placeholder values so CI and Docker Compose validation work from a fresh checkout. If it is missing in a local copy, restore it from the template:
 
 ```bash
 cp .env.example .env
 ```
+
+Do not store production secrets in `.env` or `.env.example`. Use process environment variables, CI secrets, or private local override files such as `.env.local` for real credentials.
 
 ## Data Volume
 

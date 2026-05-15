@@ -26,4 +26,3 @@ data/*.tle
 .hypothesis/
 
 backend/.env
-.env
