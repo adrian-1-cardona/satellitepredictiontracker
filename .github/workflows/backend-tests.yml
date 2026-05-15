@@ -2,7 +2,6 @@ name: Backend Tests
 
 on:
   push:
-    branches: [main, devop]
     paths:
       - backend/**
       - .env
@@ -10,7 +9,6 @@ on:
       - .gitignore
       - .github/workflows/backend-tests.yml
   pull_request:
-    branches: [main]
     paths:
       - backend/**
       - .env

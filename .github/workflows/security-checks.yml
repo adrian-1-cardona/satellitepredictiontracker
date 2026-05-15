@@ -2,7 +2,6 @@ name: Security & Dependency Checks
 
 on:
   push:
-    branches: [main, devop]
     paths:
       - backend/app/**
       - backend/requirements.txt
@@ -10,7 +9,6 @@ on:
       - frontend/package-lock.json
       - .github/workflows/security-checks.yml
   pull_request:
-    branches: [main]
     paths:
       - backend/app/**
       - backend/requirements.txt
