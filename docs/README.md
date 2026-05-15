@@ -55,4 +55,4 @@ The application routes live under `/api/v1/*` and include authentication, saved 
 
 ## Environment Files
 
-`.env.example` is committed as the template. `.env` is local-only and ignored by git.
+`.env` is committed with development-only placeholder values so Docker Compose and CI checks work from a fresh checkout. `.env.example` remains the editable template. Keep real credentials in environment variables, CI secrets, or private local override files such as `.env.local`.
