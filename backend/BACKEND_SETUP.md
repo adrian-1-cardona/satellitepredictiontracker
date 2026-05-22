@@ -2,13 +2,16 @@
 
 ## Overview
 
-The `backend/` folder contains everything needed to run the Satellite Tracker backend: the FastAPI application under `app/`, the Alembic migrations under `alembic/`, the pytest suite under `tests/`, and the operational files `Dockerfile.api`, `docker-compose.yml`, `requirements.txt`, `pytest.ini`, and `alembic.ini`. Shared assets (`data/`, `docs/`, `instructions/`) and environment files (`.env`, `.env.example`) stay at the workspace root and are referenced from `backend/` via relative paths.
+The `backend/` folder contains everything needed to run the Satellite Tracker backend: the FastAPI application under `app/`, the Alembic migrations under `alembic/`, the pytest suite under `tests/`, and the operational files `Dockerfile.api`, `docker-compose.yml`, `requirements.txt`, `pytest.ini`, and `alembic.ini`. Shared assets (`data/`, `docs/`, `instructions/`) and the environment template (`.env.example`) stay at the workspace root; local `.env` files are ignored and referenced from `backend/` via relative paths.
 
 ## Docker Compose Quickstart
 
 Run the full stack (API, Celery worker, Celery beat, Postgres, Redis, PgAdmin) from the `backend/` folder:
 
 ```bash
+cp .env.example .env
+mkdir -p secrets
+printf '%s\n' 'dev-admin-token-change-in-production' > secrets/admin_token
 cd backend && docker compose --env-file ../.env up --build
 ```
 
@@ -31,7 +34,7 @@ With the Compose stack running, the following URLs are available on `localhost`:
 
 - Health: `http://localhost:8000/health`
 - Readiness: `http://localhost:8000/ready`
-- Metrics (Prometheus text format): `http://localhost:8000/metrics`
+- Metrics (Prometheus text format, admin token required): `http://localhost:8000/metrics`
 
 Example check:
 
@@ -82,18 +85,18 @@ celery -A app.tasks:celery_app beat --loglevel=info
 
 ## Env File Convention
 
-`.env` and `.env.example` live at the workspace root and are never moved into `backend/`. Two conventions keep them discoverable:
+`.env.example` lives at the workspace root and `.env` is created locally from that template. Two conventions keep them discoverable:
 
 - **Docker**: invoke Compose from `backend/` with `--env-file ../.env` (as shown in the quickstart above). Equivalent from the workspace root: `docker compose -f backend/docker-compose.yml --env-file .env up --build`.
 - **Local (non-Docker)**: run from the workspace-root CWD so `pydantic-settings` picks up `.env` automatically, or pass an explicit path via `ENV_FILE=../.env` when running from `backend/`. Uvicorn and Celery both honour the process CWD, so launching them from the workspace root with module paths (`uvicorn app.main:app --app-dir backend`) is equivalent.
 
-The repository includes a root `.env` with development-only placeholder values so CI and Docker Compose validation work from a fresh checkout. If it is missing in a local copy, restore it from the template:
+The repository does not commit `.env`. Create it from the template:
 
 ```bash
 cp .env.example .env
 ```
 
-Do not store production secrets in `.env` or `.env.example`. Use process environment variables, CI secrets, or private local override files such as `.env.local` for real credentials.
+Do not commit `.env`, and do not store production secrets in `.env.example`. Use process environment variables, CI secrets, or private local secret management for real credentials.
 
 ## Data Volume
 

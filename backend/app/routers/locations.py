@@ -1,10 +1,12 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.auth import get_current_user
 from app.database import get_db
+from app.middleware import limiter
 from app.models import Location, User
+from app.pagination import PaginatedResponse, PaginationParams, paginate, pagination_params
 from app.schemas import LocationCreate, LocationOut, LocationUpdate, MessageOut
 from app.tasks import enqueue_prediction
 
@@ -19,25 +21,29 @@ def owned_location(db: Session, user_id: int, location_id: int) -> Location:
     return location
 
 
-@router.get("", response_model=list[LocationOut])
+@router.get("", response_model=PaginatedResponse[LocationOut])
+@limiter.limit("100/minute")
 def list_locations(
+    request: Request,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
-    limit: int = Query(100, ge=1, le=500),
-    offset: int = Query(0, ge=0),
-) -> list[Location]:
-    return (
+    page: PaginationParams = Depends(pagination_params),
+) -> dict:
+    locations = (
         db.query(Location)
         .filter(Location.user_id == current_user.id)
         .order_by(Location.created_at.desc())
-        .offset(offset)
-        .limit(limit)
+        .offset(page.skip)
+        .limit(page.limit)
         .all()
     )
+    return paginate(locations, page)
 
 
 @router.post("", response_model=LocationOut, status_code=status.HTTP_201_CREATED)
+@limiter.limit("100/minute")
 def create_location(
+    request: Request,
     payload: LocationCreate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -55,7 +61,9 @@ def create_location(
 
 
 @router.get("/{location_id}", response_model=LocationOut)
+@limiter.limit("100/minute")
 def get_location(
+    request: Request,
     location_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -64,7 +72,9 @@ def get_location(
 
 
 @router.patch("/{location_id}", response_model=LocationOut)
+@limiter.limit("100/minute")
 def update_location(
+    request: Request,
     location_id: int,
     payload: LocationUpdate,
     db: Session = Depends(get_db),
@@ -85,7 +95,9 @@ def update_location(
 
 
 @router.delete("/{location_id}", response_model=MessageOut)
+@limiter.limit("100/minute")
 def delete_location(
+    request: Request,
     location_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -94,4 +106,3 @@ def delete_location(
     db.delete(location)
     db.commit()
     return {"message": "Location deleted"}
-

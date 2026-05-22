@@ -44,9 +44,9 @@ export default function Alerts() {
         fetchAlertHistory(historyDays),
         fetchLocations(),
       ]);
-      setAlerts(alertsData);
-      setHistory(historyData);
-      setLocations(locationsData);
+      setAlerts(alertsData.data);
+      setHistory(historyData.data);
+      setLocations(locationsData.data);
     } catch (err) {
       setError(getErrorMessage(err, "Unable to load alerts."));
     } finally {

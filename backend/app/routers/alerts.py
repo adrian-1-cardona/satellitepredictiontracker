@@ -1,11 +1,13 @@
 from datetime import datetime, timedelta, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.orm import Session
 
 from app.auth import get_current_user
 from app.database import get_db
+from app.middleware import limiter
 from app.models import Alert, AlertHistory, Location, User
+from app.pagination import PaginatedResponse, PaginationParams, paginate, pagination_params
 from app.schemas import AlertCreate, AlertHistoryOut, AlertOut, AlertUpdate, MessageOut
 
 
@@ -26,16 +28,29 @@ def owned_alert(db: Session, user_id: int, alert_id: int) -> Alert:
     return alert
 
 
-@router.get("", response_model=list[AlertOut])
+@router.get("", response_model=PaginatedResponse[AlertOut])
+@limiter.limit("100/minute")
 def list_alerts(
+    request: Request,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
-) -> list[Alert]:
-    return db.query(Alert).filter(Alert.user_id == current_user.id).order_by(Alert.created_at.desc()).all()
+    page: PaginationParams = Depends(pagination_params),
+) -> dict:
+    alerts = (
+        db.query(Alert)
+        .filter(Alert.user_id == current_user.id)
+        .order_by(Alert.created_at.desc())
+        .offset(page.skip)
+        .limit(page.limit)
+        .all()
+    )
+    return paginate(alerts, page)
 
 
 @router.post("", response_model=AlertOut, status_code=status.HTTP_201_CREATED)
+@limiter.limit("100/minute")
 def create_alert(
+    request: Request,
     payload: AlertCreate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -48,24 +63,32 @@ def create_alert(
     return alert
 
 
-@router.get("/history", response_model=list[AlertHistoryOut])
+@router.get("/history", response_model=PaginatedResponse[AlertHistoryOut])
+@limiter.limit("100/minute")
 def alert_history(
+    request: Request,
     days: int = Query(7, ge=1, le=90),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
-) -> list[AlertHistory]:
+    page: PaginationParams = Depends(pagination_params),
+) -> dict:
     since = datetime.now(timezone.utc) - timedelta(days=days)
-    return (
+    history = (
         db.query(AlertHistory)
         .join(Alert)
         .filter(Alert.user_id == current_user.id, AlertHistory.delivered_at >= since)
         .order_by(AlertHistory.delivered_at.desc())
+        .offset(page.skip)
+        .limit(page.limit)
         .all()
     )
+    return paginate(history, page)
 
 
 @router.get("/stats", response_model=dict)
+@limiter.limit("100/minute")
 def alert_stats(
+    request: Request,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> dict:
@@ -76,7 +99,9 @@ def alert_stats(
 
 
 @router.get("/{alert_id}", response_model=AlertOut)
+@limiter.limit("100/minute")
 def get_alert(
+    request: Request,
     alert_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -85,7 +110,9 @@ def get_alert(
 
 
 @router.patch("/{alert_id}", response_model=AlertOut)
+@limiter.limit("100/minute")
 def update_alert(
+    request: Request,
     alert_id: int,
     payload: AlertUpdate,
     db: Session = Depends(get_db),
@@ -104,7 +131,9 @@ def update_alert(
 
 
 @router.delete("/{alert_id}", response_model=MessageOut)
+@limiter.limit("100/minute")
 def delete_alert(
+    request: Request,
     alert_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -115,24 +144,32 @@ def delete_alert(
     return {"message": "Alert deleted"}
 
 
-@router.get("/history/recent", response_model=list[AlertHistoryOut], include_in_schema=False)
+@router.get("/history/recent", response_model=PaginatedResponse[AlertHistoryOut], include_in_schema=False)
+@limiter.limit("100/minute")
 def alert_history_legacy(
+    request: Request,
     days: int = Query(7, ge=1, le=90),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
-) -> list[AlertHistory]:
+    page: PaginationParams = Depends(pagination_params),
+) -> dict:
     since = datetime.now(timezone.utc) - timedelta(days=days)
-    return (
+    history = (
         db.query(AlertHistory)
         .join(Alert)
         .filter(Alert.user_id == current_user.id, AlertHistory.delivered_at >= since)
         .order_by(AlertHistory.delivered_at.desc())
+        .offset(page.skip)
+        .limit(page.limit)
         .all()
     )
+    return paginate(history, page)
 
 
 @router.get("/stats/summary", include_in_schema=False)
+@limiter.limit("100/minute")
 def alert_stats_legacy(
+    request: Request,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> dict:

@@ -38,7 +38,7 @@ class TestLocationErrorScenarios:
             )
 
             assert response.status_code == 422
-            loc = response.json()["detail"][0]["loc"]
+            loc = response.json()["details"]["fields"][0]["loc"]
             assert "latitude" in loc or "longitude" in loc
 
     def test_missing_required_fields(self, client, auth_headers):

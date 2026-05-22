@@ -4,7 +4,7 @@ services:
     environment:
       POSTGRES_DB: satellite_tracker
       POSTGRES_USER: tracker
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-tracker_dev_password}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in ../.env}
     ports:
       - "5432:5432"
     volumes:
@@ -32,11 +32,18 @@ services:
     env_file:
       - ../.env
     environment:
-      DATABASE_URL: postgresql+psycopg2://tracker:${DB_PASSWORD:-tracker_dev_password}@postgres:5432/satellite_tracker
-      REDIS_URL: redis://redis:6379
-      CELERY_BROKER_URL: redis://redis:6379/0
-      CELERY_RESULT_BACKEND: redis://redis:6379/1
-      SECRET_KEY: ${SECRET_KEY:-dev-secret-key-change-in-production-min-32-chars}
+      DATABASE_URL: ${DATABASE_URL:?Set DATABASE_URL in ../.env}
+      REDIS_URL: ${REDIS_URL:?Set REDIS_URL in ../.env}
+      CELERY_BROKER_URL: ${CELERY_BROKER_URL:?Set CELERY_BROKER_URL in ../.env}
+      CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND:?Set CELERY_RESULT_BACKEND in ../.env}
+      SECRET_KEY: ${SECRET_KEY:?Set SECRET_KEY in ../.env}
+      ADMIN_TOKEN: ${ADMIN_TOKEN:?Set ADMIN_TOKEN in ../.env}
+      DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in ../.env}
+      DB_POOL_SIZE: ${DB_POOL_SIZE:-20}
+      DB_MAX_OVERFLOW: ${DB_MAX_OVERFLOW:-40}
+      DB_CONNECT_TIMEOUT: ${DB_CONNECT_TIMEOUT:-10}
+      DB_POOL_RECYCLE: ${DB_POOL_RECYCLE:-3600}
+      FORCE_HTTPS: ${FORCE_HTTPS:-false}
       TLE_CACHE_PATH: data/stations.tle
     ports:
       - "8000:8000"
@@ -56,11 +63,17 @@ services:
     env_file:
       - ../.env
     environment:
-      DATABASE_URL: postgresql+psycopg2://tracker:${DB_PASSWORD:-tracker_dev_password}@postgres:5432/satellite_tracker
-      REDIS_URL: redis://redis:6379
-      CELERY_BROKER_URL: redis://redis:6379/0
-      CELERY_RESULT_BACKEND: redis://redis:6379/1
-      SECRET_KEY: ${SECRET_KEY:-dev-secret-key-change-in-production-min-32-chars}
+      DATABASE_URL: ${DATABASE_URL:?Set DATABASE_URL in ../.env}
+      REDIS_URL: ${REDIS_URL:?Set REDIS_URL in ../.env}
+      CELERY_BROKER_URL: ${CELERY_BROKER_URL:?Set CELERY_BROKER_URL in ../.env}
+      CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND:?Set CELERY_RESULT_BACKEND in ../.env}
+      SECRET_KEY: ${SECRET_KEY:?Set SECRET_KEY in ../.env}
+      ADMIN_TOKEN: ${ADMIN_TOKEN:?Set ADMIN_TOKEN in ../.env}
+      DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in ../.env}
+      DB_POOL_SIZE: ${DB_POOL_SIZE:-20}
+      DB_MAX_OVERFLOW: ${DB_MAX_OVERFLOW:-40}
+      DB_CONNECT_TIMEOUT: ${DB_CONNECT_TIMEOUT:-10}
+      DB_POOL_RECYCLE: ${DB_POOL_RECYCLE:-3600}
       TLE_CACHE_PATH: data/stations.tle
     depends_on:
       postgres:
@@ -78,11 +91,17 @@ services:
     env_file:
       - ../.env
     environment:
-      DATABASE_URL: postgresql+psycopg2://tracker:${DB_PASSWORD:-tracker_dev_password}@postgres:5432/satellite_tracker
-      REDIS_URL: redis://redis:6379
-      CELERY_BROKER_URL: redis://redis:6379/0
-      CELERY_RESULT_BACKEND: redis://redis:6379/1
-      SECRET_KEY: ${SECRET_KEY:-dev-secret-key-change-in-production-min-32-chars}
+      DATABASE_URL: ${DATABASE_URL:?Set DATABASE_URL in ../.env}
+      REDIS_URL: ${REDIS_URL:?Set REDIS_URL in ../.env}
+      CELERY_BROKER_URL: ${CELERY_BROKER_URL:?Set CELERY_BROKER_URL in ../.env}
+      CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND:?Set CELERY_RESULT_BACKEND in ../.env}
+      SECRET_KEY: ${SECRET_KEY:?Set SECRET_KEY in ../.env}
+      ADMIN_TOKEN: ${ADMIN_TOKEN:?Set ADMIN_TOKEN in ../.env}
+      DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in ../.env}
+      DB_POOL_SIZE: ${DB_POOL_SIZE:-20}
+      DB_MAX_OVERFLOW: ${DB_MAX_OVERFLOW:-40}
+      DB_CONNECT_TIMEOUT: ${DB_CONNECT_TIMEOUT:-10}
+      DB_POOL_RECYCLE: ${DB_POOL_RECYCLE:-3600}
       TLE_CACHE_PATH: data/stations.tle
     depends_on:
       postgres:
@@ -96,7 +115,7 @@ services:
     image: dpage/pgadmin4:8
     environment:
       PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-admin@tracker.local}
-      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:?Set PGADMIN_DEFAULT_PASSWORD in ../.env}
     ports:
       - "5050:80"
     depends_on:
@@ -113,6 +132,8 @@ services:
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus_data:/prometheus
+    secrets:
+      - admin_token
     depends_on:
       api:
         condition: service_started
@@ -121,7 +142,7 @@ services:
     image: grafana/grafana:latest
     environment:
       GF_SECURITY_ADMIN_USER: ${GRAFANA_USER:-admin}
-      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:?Set GRAFANA_PASSWORD in ../.env}
       GF_INSTALL_PLUGINS: grafana-piechart-panel
     ports:
       - "3001:3000"
@@ -155,3 +176,7 @@ volumes:
   prometheus_data:
   grafana_data:
   loki_data:
+
+secrets:
+  admin_token:
+    file: ${ADMIN_TOKEN_FILE:?Set ADMIN_TOKEN_FILE in ../.env}

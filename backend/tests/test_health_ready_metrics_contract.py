@@ -37,15 +37,21 @@ def test_ready_contract(client: TestClient) -> None:
     assert body.get("ready") is True, f"/ready response missing ready=True: {body!r}"
 
 
+def test_metrics_requires_admin_token(client: TestClient) -> None:
+    """GET /metrics rejects unauthenticated requests."""
+    response = client.get("/metrics")
+    assert response.status_code == 401
+
+
 def test_metrics_contract(client: TestClient) -> None:
-    """GET /metrics returns 200 with a Prometheus text/plain content type.
+    """GET /metrics returns 200 with Prometheus text/plain for admin-token requests.
 
     Prometheus `CONTENT_TYPE_LATEST` is typically
     ``text/plain; version=0.0.4; charset=utf-8``.
 
     Validates: Requirement 2.5
     """
-    response = client.get("/metrics")
+    response = client.get("/metrics", headers={"X-Admin-Token": "test-admin-token-change-in-production"})
     assert response.status_code == 200
 
     content_type = response.headers.get("content-type", "")

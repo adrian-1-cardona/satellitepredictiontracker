@@ -3,10 +3,11 @@
 Feature: backend-frontend-restructure
 Validates: Requirements 4.1, 10.2
 
-This test confirms that `docker compose -f backend/docker-compose.yml config`
-produces a valid merged configuration with no unresolved path errors when
-executed from the workspace root. If the `docker` CLI is not available on
-the host (or `docker compose` subcommand is unsupported, e.g., a legacy
+This test confirms that `docker compose --env-file <test-env> -f
+backend/docker-compose.yml config` produces a valid merged configuration with
+no unresolved path errors when executed from the workspace root. If the
+`docker` CLI is not available on the host (or `docker compose` subcommand is
+unsupported, e.g., a legacy
 standalone `docker-compose` install), the test skips cleanly so the wider
 pytest suite keeps a green baseline on developer machines and CI runners
 that do not ship Docker.
@@ -44,7 +45,7 @@ def _docker_compose_subcommand_missing(stderr: str) -> bool:
 
 
 def test_docker_compose_config_is_valid() -> None:
-    """`docker compose -f backend/docker-compose.yml config` exits 0."""
+    """`docker compose --env-file <test-env> -f backend/docker-compose.yml config` exits 0."""
     if shutil.which("docker") is None:
         pytest.skip("docker CLI not available")
 
@@ -56,13 +57,45 @@ def test_docker_compose_config_is_valid() -> None:
         f"expected compose file at {compose_path} but it was not found"
     )
 
-    result = subprocess.run(
-        ["docker", "compose", "-f", COMPOSE_FILE_REL, "config"],
-        cwd=WORKSPACE_ROOT,
-        capture_output=True,
-        text=True,
-        timeout=60,
+    tmp_dir = WORKSPACE_ROOT / "backend" / ".pytest-compose"
+    tmp_dir.mkdir(exist_ok=True)
+    token_file = tmp_dir / "admin_token"
+    env_file = tmp_dir / "compose.env"
+    token_file.write_text("compose-test-admin-token\n", encoding="utf-8")
+    env_file.write_text(
+        "\n".join(
+            [
+                "DB_PASSWORD=compose_test_password",
+                "DATABASE_URL=postgresql+psycopg2://tracker:compose_test_password@postgres:5432/satellite_tracker",
+                "REDIS_URL=redis://redis:6379",
+                "CELERY_BROKER_URL=redis://redis:6379/0",
+                "CELERY_RESULT_BACKEND=redis://redis:6379/1",
+                "SECRET_KEY=compose-test-secret-key-change-in-production-min-32-chars",
+                "ADMIN_TOKEN=compose-test-admin-token",
+                f"ADMIN_TOKEN_FILE={token_file}",
+                "PGADMIN_DEFAULT_PASSWORD=compose_test_pgadmin_password",
+                "GRAFANA_PASSWORD=compose_test_grafana_password",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
     )
+    root_env = WORKSPACE_ROOT / ".env"
+    cleanup_root_env = not root_env.exists()
+    if cleanup_root_env:
+        root_env.write_text(env_file.read_text(encoding="utf-8"), encoding="utf-8")
+
+    try:
+        result = subprocess.run(
+            ["docker", "compose", "--env-file", str(env_file), "-f", COMPOSE_FILE_REL, "config"],
+            cwd=WORKSPACE_ROOT,
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+    finally:
+        if cleanup_root_env:
+            root_env.unlink(missing_ok=True)
 
     if result.returncode != 0 and _docker_compose_subcommand_missing(result.stderr):
         pytest.skip(

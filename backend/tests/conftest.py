@@ -6,6 +6,8 @@ from fastapi.testclient import TestClient
 
 os.environ["DATABASE_URL"] = "sqlite:///./test_satellite_tracker.db"
 os.environ["SECRET_KEY"] = "test-secret-key-change-in-production-min-32-chars"
+os.environ["ADMIN_TOKEN"] = "test-admin-token-change-in-production"
+os.environ["DB_PASSWORD"] = "test-db-password"
 
 import app.database as database
 import app.models  # noqa: F401
@@ -14,10 +16,12 @@ database.configure_database(os.environ["DATABASE_URL"])
 
 from app.database import Base, get_db
 from app.main import app
+from app.middleware import limiter
 
 
 @pytest.fixture(autouse=True)
 def reset_database() -> Generator[None, None, None]:
+    limiter._storage.reset()
     Base.metadata.drop_all(bind=database.engine)
     Base.metadata.create_all(bind=database.engine)
     yield
@@ -57,4 +61,3 @@ def auth_headers(client: TestClient) -> dict[str, str]:
     assert response.status_code == 201
     token = response.json()["access_token"]
     return {"Authorization": f"Bearer {token}"}
-

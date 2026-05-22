@@ -1,11 +1,13 @@
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
 from app.auth import require_admin
 from app.database import get_db
+from app.middleware import limiter
 from app.models import Alert, JobHistory, Location, SatellitePass, User
+from app.pagination import PaginatedResponse, PaginationParams, paginate, pagination_params
 from app.schemas import JobStatusOut, MessageOut, UserOut
 from app.tasks import cleanup_expired_passes
 
@@ -14,7 +16,8 @@ router = APIRouter(prefix="/admin", tags=["Admin"])
 
 
 @router.get("/stats")
-def admin_stats(db: Session = Depends(get_db), _: User = Depends(require_admin)) -> dict:
+@limiter.limit("50/minute")
+def admin_stats(request: Request, db: Session = Depends(get_db), _: User = Depends(require_admin)) -> dict:
     return {
         "users": db.query(User).count(),
         "locations": db.query(Location).count(),
@@ -24,17 +27,28 @@ def admin_stats(db: Session = Depends(get_db), _: User = Depends(require_admin))
     }
 
 
-@router.get("/job-status", response_model=list[JobStatusOut])
+@router.get("/job-status", response_model=PaginatedResponse[JobStatusOut])
+@limiter.limit("50/minute")
 def job_status(
+    request: Request,
     db: Session = Depends(get_db),
     _: User = Depends(require_admin),
-    limit: int = Query(50, ge=1, le=500),
-) -> list[JobHistory]:
-    return db.query(JobHistory).order_by(JobHistory.created_at.desc()).limit(limit).all()
+    page: PaginationParams = Depends(pagination_params),
+) -> dict:
+    jobs = (
+        db.query(JobHistory)
+        .order_by(JobHistory.created_at.desc())
+        .offset(page.skip)
+        .limit(page.limit)
+        .all()
+    )
+    return paginate(jobs, page)
 
 
 @router.get("/job-status/{task_id}", response_model=JobStatusOut)
+@limiter.limit("50/minute")
 def get_job_status(
+    request: Request,
     task_id: str,
     db: Session = Depends(get_db),
     _: User = Depends(require_admin),
@@ -45,17 +59,22 @@ def get_job_status(
     return job
 
 
-@router.get("/users", response_model=list[UserOut])
+@router.get("/users", response_model=PaginatedResponse[UserOut])
+@limiter.limit("50/minute")
 def users(
+    request: Request,
     db: Session = Depends(get_db),
     _: User = Depends(require_admin),
-    limit: int = Query(100, ge=1, le=500),
-) -> list[User]:
-    return db.query(User).order_by(User.created_at.desc()).limit(limit).all()
+    page: PaginationParams = Depends(pagination_params),
+) -> dict:
+    users_page = db.query(User).order_by(User.created_at.desc()).offset(page.skip).limit(page.limit).all()
+    return paginate(users_page, page)
 
 
 @router.patch("/users/{user_id}/active", response_model=UserOut)
+@limiter.limit("50/minute")
 def set_user_active(
+    request: Request,
     user_id: int,
     active: bool,
     db: Session = Depends(get_db),
@@ -72,7 +91,7 @@ def set_user_active(
 
 
 @router.post("/cleanup", response_model=MessageOut)
-def cleanup(_: User = Depends(require_admin)) -> dict:
+@limiter.limit("50/minute")
+def cleanup(request: Request, _: User = Depends(require_admin)) -> dict:
     result = cleanup_expired_passes.delay()
     return {"message": f"Cleanup queued: {result.id}"}
-

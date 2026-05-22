@@ -19,10 +19,12 @@ Prerequisites:
 - Docker and Docker Compose
 - Python 3.11+ for local backend development
 
-Review the committed development env file:
+Create a local development env file from the template:
 
 ```bash
-cat .env
+cp .env.example .env
+mkdir -p secrets
+printf '%s\n' 'dev-admin-token-change-in-production' > secrets/admin_token
 ```
 
 Start the backend stack:
@@ -53,7 +55,7 @@ Swagger UI, ReDoc, and the raw OpenAPI schema are intentionally disabled. `/docs
 
 ## Environment Files
 
-`.env` is committed with development-only placeholder values so Docker Compose and CI can validate the backend stack from a fresh checkout. `.env.example` remains the editable template. Never put production secrets in either file; use environment variables, CI secrets, or private local override files such as `.env.local` for real credentials. If you make this repository public after having committed real secrets in the past, rotate those secrets and rewrite/purge the affected history before publishing.
+`.env.example` is the committed template. `.env` is ignored and should be created locally or supplied by CI secrets; never commit real production credentials. If real secrets were ever committed, rotate them and purge the affected history before publishing.
 
 ## Development
 
@@ -81,7 +83,7 @@ Docker compose validation:
 
 ```bash
 cd backend
-docker compose config --quiet
+docker compose --env-file ../.env config --quiet
 ```
 
 ## Repository Map

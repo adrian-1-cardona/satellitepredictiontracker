@@ -4,6 +4,20 @@ import re
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
 
+SATELLITE_NAME_PATTERN = re.compile(
+    r"(?:[\x00-\x1f\x7f]|--|/\*|\*/|;|\b(?:alter|delete|drop|insert|select|truncate|union|update)\b)",
+    re.IGNORECASE,
+)
+
+
+def validate_satellite_name(value: str | None) -> str | None:
+    if value is None:
+        return value
+    if SATELLITE_NAME_PATTERN.search(value):
+        raise ValueError("Satellite name contains unsupported characters")
+    return value
+
+
 class TokenResponse(BaseModel):
     user_id: int
     email: EmailStr
@@ -57,14 +71,14 @@ class LocationCreate(BaseModel):
     name: str = Field(min_length=1, max_length=120)
     latitude: float = Field(ge=-90, le=90)
     longitude: float = Field(ge=-180, le=180)
-    elevation_m: float = Field(default=0.0, ge=-500, le=10000)
+    elevation_m: float = Field(default=0.0, ge=-500, le=8848)
 
 
 class LocationUpdate(BaseModel):
     name: str | None = Field(default=None, min_length=1, max_length=120)
     latitude: float | None = Field(default=None, ge=-90, le=90)
     longitude: float | None = Field(default=None, ge=-180, le=180)
-    elevation_m: float | None = Field(default=None, ge=-500, le=10000)
+    elevation_m: float | None = Field(default=None, ge=-500, le=8848)
 
 
 class LocationOut(BaseModel):
@@ -108,6 +122,11 @@ class AlertCreate(BaseModel):
     max_brightness: float | None = Field(default=None, ge=-10, le=20)
     notification_method: str = Field(default="email", pattern="^(email|sms|push|webhook)$")
 
+    @field_validator("satellite_name")
+    @classmethod
+    def validate_alert_satellite_name(cls, v: str | None) -> str | None:
+        return validate_satellite_name(v)
+
 
 class AlertUpdate(BaseModel):
     satellite_name: str | None = Field(default=None, max_length=160)
@@ -115,6 +134,11 @@ class AlertUpdate(BaseModel):
     max_brightness: float | None = Field(default=None, ge=-10, le=20)
     enabled: bool | None = None
     notification_method: str | None = Field(default=None, pattern="^(email|sms|push|webhook)$")
+
+    @field_validator("satellite_name")
+    @classmethod
+    def validate_alert_satellite_name(cls, v: str | None) -> str | None:
+        return validate_satellite_name(v)
 
 
 class AlertOut(BaseModel):
@@ -164,4 +188,3 @@ class HealthOut(BaseModel):
     status: str
     version: str
     timestamp: datetime
-

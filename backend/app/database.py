@@ -16,9 +16,21 @@ SessionLocal: sessionmaker[Session]
 
 
 def _engine_kwargs(database_url: str) -> dict:
+    settings = get_settings()
     kwargs: dict = {"pool_pre_ping": True}
     if database_url.startswith("sqlite"):
         kwargs["connect_args"] = {"check_same_thread": False}
+    else:
+        kwargs.update(
+            {
+                "pool_size": settings.db_pool_size,
+                "max_overflow": settings.db_max_overflow,
+                "pool_recycle": settings.db_pool_recycle,
+                "echo_pool": settings.debug,
+            }
+        )
+        if database_url.startswith("postgresql"):
+            kwargs["connect_args"] = {"connect_timeout": settings.db_connect_timeout}
     return kwargs
 
 
