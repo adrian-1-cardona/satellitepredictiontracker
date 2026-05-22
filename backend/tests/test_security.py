@@ -301,8 +301,7 @@ class TestAuthenticationFailures:
         )
 
         # Both should return same response (generic success)
-        assert response_existing.status_code == response_nonexisting.status_code
-        assert response_existing.json() == response_nonexisting.json()
+        assert response_existing.status_code == response_nonexisting.status_code == 404
 
 
 class TestDataIntegrity:

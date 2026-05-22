@@ -7,9 +7,12 @@ import uuid
 from typing import Callable
 
 from fastapi import Request, Response
+from fastapi.responses import JSONResponse
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from starlette.middleware.base import BaseHTTPMiddleware
+
+from app.config import get_settings
 
 
 # Initialize rate limiter
@@ -42,6 +45,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
         response = await call_next(request)
+        settings = get_settings()
 
         # Security headers
         response.headers["X-Content-Type-Options"] = "nosniff"
@@ -49,8 +53,45 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["X-XSS-Protection"] = "1; mode=block"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
         response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
+        if settings.production or settings.force_https:
+            response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
 
         return response
+
+
+class RequestSizeLimitMiddleware(BaseHTTPMiddleware):
+    """Reject oversized JSON/API payloads before they reach route handlers."""
+
+    async def dispatch(self, request: Request, call_next: Callable) -> Response:
+        if request.method in {"POST", "PUT", "PATCH"}:
+            content_length = request.headers.get("content-length")
+            if content_length:
+                request_id = getattr(request.state, "request_id", None)
+                try:
+                    body_size = int(content_length)
+                except ValueError:
+                    return JSONResponse(
+                        status_code=400,
+                        content={
+                            "error": "BAD_REQUEST",
+                            "message": "Invalid Content-Length header",
+                            "request_id": request_id,
+                            "details": {},
+                        },
+                    )
+                max_bytes = get_settings().request_body_max_bytes
+                if body_size > max_bytes:
+                    return JSONResponse(
+                        status_code=413,
+                        content={
+                            "error": "REQUEST_TOO_LARGE",
+                            "message": "Request body too large",
+                            "request_id": request_id,
+                            "details": {"max_bytes": max_bytes},
+                        },
+                    )
+
+        return await call_next(request)
 
 
 class MetricsMiddleware(BaseHTTPMiddleware):

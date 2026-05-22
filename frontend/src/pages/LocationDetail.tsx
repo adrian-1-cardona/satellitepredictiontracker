@@ -66,12 +66,12 @@ export default function LocationDetail() {
     setLoadingPasses(true);
     setError("");
     try {
-      const data = await fetchPasses({
+      const envelope = await fetchPasses({
         locationId,
         daysAhead,
         minElevation,
       });
-      setPasses(data);
+      setPasses(envelope.data);
     } catch (err) {
       setError(getErrorMessage(err, "Unable to load passes."));
     } finally {

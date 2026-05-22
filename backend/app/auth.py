@@ -3,7 +3,7 @@ import secrets
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, Header, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from passlib.context import CryptContext
@@ -106,6 +106,33 @@ def require_admin(current_user: User = Depends(get_current_user)) -> User:
     if not current_user.is_admin:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin privileges required")
     return current_user
+
+
+def require_admin_token(
+    request: Request,
+    x_admin_token: str | None = Header(default=None, alias="X-Admin-Token"),
+) -> None:
+    settings = get_settings()
+    if not settings.admin_token:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Admin token is not configured",
+        )
+
+    auth_header = request.headers.get("Authorization", "")
+    bearer_token = None
+    if auth_header.startswith("Bearer "):
+        bearer_token = auth_header.removeprefix("Bearer ").strip()
+
+    presented_token = x_admin_token or bearer_token
+    if not presented_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Admin token required",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    if not secrets.compare_digest(presented_token, settings.admin_token):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid admin token")
 
 
 def consume_refresh_token(db: Session, raw_token: str) -> User | None:

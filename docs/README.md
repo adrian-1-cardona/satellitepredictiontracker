@@ -7,6 +7,9 @@ This repository contains a FastAPI backend and a React/Vite frontend for satelli
 Start the backend stack from the `backend/` directory:
 
 ```bash
+cp .env.example .env
+mkdir -p secrets
+printf '%s\n' 'dev-admin-token-change-in-production' > secrets/admin_token
 cd backend
 docker compose --env-file ../.env up --build
 ```
@@ -55,4 +58,4 @@ The application routes live under `/api/v1/*` and include authentication, saved 
 
 ## Environment Files
 
-`.env` is committed with development-only placeholder values so Docker Compose and CI checks work from a fresh checkout. `.env.example` remains the editable template. Keep real credentials in environment variables, CI secrets, or private local override files such as `.env.local`.
+`.env.example` is the committed template. `.env` is ignored and should be created locally or supplied by CI secrets. Keep real credentials in environment variables, CI secrets, or private secret management.

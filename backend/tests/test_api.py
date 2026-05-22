@@ -64,7 +64,8 @@ def test_location_pass_and_alert_smoke(client: TestClient, auth_headers: dict[st
 
     passes = client.get(f"/api/v1/passes?location_id={location_id}", headers=auth_headers)
     assert passes.status_code == 200
-    assert len(passes.json()) == 1
+    assert passes.json()["count"] == 1
+    assert len(passes.json()["data"]) == 1
 
     refresh = client.post(
         "/api/v1/passes/refresh",
@@ -84,7 +85,8 @@ def test_location_pass_and_alert_smoke(client: TestClient, auth_headers: dict[st
 
     list_alerts = client.get("/api/v1/alerts", headers=auth_headers)
     assert list_alerts.status_code == 200
-    assert len(list_alerts.json()) == 1
+    assert list_alerts.json()["count"] == 1
+    assert len(list_alerts.json()["data"]) == 1
 
     update_alert = client.patch("/api/v1/alerts/%s" % alert_id, headers=auth_headers, json={"enabled": False})
     assert update_alert.status_code == 200
@@ -92,11 +94,10 @@ def test_location_pass_and_alert_smoke(client: TestClient, auth_headers: dict[st
 
     history = client.get("/api/v1/alerts/history", headers=auth_headers)
     assert history.status_code == 200
-    assert history.json() == []
+    assert history.json()["data"] == []
 
     health = client.get("/health")
     ready = client.get("/ready")
     assert health.status_code == 200
     assert ready.status_code == 200
     assert ready.json()["ready"] is True
-

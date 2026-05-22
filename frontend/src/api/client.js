@@ -169,10 +169,12 @@ export async function deleteLocation(locationId) {
   return response.data;
 }
 
-export async function fetchPasses({ locationId, daysAhead = 12, minElevation }) {
+export async function fetchPasses({ locationId, daysAhead = 12, minElevation, skip = 0, limit = 50 }) {
   const params = {
     location_id: locationId,
     days_ahead: daysAhead,
+    skip,
+    limit,
   };
   if (minElevation !== "" && minElevation !== null && minElevation !== undefined) {
     params.min_elevation = minElevation;
@@ -216,7 +218,7 @@ export async function fetchPassStats() {
  * Fetch list of trackable satellites.
  * @backend GET /satellites
  * @param {number} limit - Maximum number of satellites to return (default: 100, max: 500)
- * @returns {Promise<Object>} Object with satellites array
+ * @returns {Promise<Object>} Paginated response with satellite names in data
  * @throws {Error} On 400 (invalid limit)
  */
 export async function fetchSatellites(limit = 100) {
@@ -260,7 +262,7 @@ export async function fetchAlert(alertId) {
  * Fetch alert history.
  * @backend GET /alerts/history
  * @param {number} days - Number of days to look back (default: 7, max: 90)
- * @returns {Promise<Array>} Array of alert history records (AlertHistoryOut schema)
+ * @returns {Promise<Object>} Paginated response with alert history records in data
  * @throws {Error} On 401 (auth required)
  */
 export async function fetchAlertHistory(days = 7) {

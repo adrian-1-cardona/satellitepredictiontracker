@@ -47,7 +47,6 @@ FILES_UNCHANGED_LOCATION: List[str] = [
     "data",
     "instructions",
     ".vscode",
-    ".env",
     ".env.example",
     ".gitignore",
 ]

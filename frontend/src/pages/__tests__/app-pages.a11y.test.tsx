@@ -26,26 +26,36 @@ vi.mock("../../api/client.js", () => ({
     elevation_m: 90,
   }),
   deleteAlert: vi.fn().mockResolvedValue({}),
-  fetchAlertHistory: vi.fn().mockResolvedValue([
-    {
-      id: 11,
-      alert_id: 1,
-      pass_id: 9,
-      delivery_status: "delivered",
-      delivered_at: "2026-05-10T12:00:00Z",
-      message: "Pass alert delivered",
-    },
-  ]),
-  fetchAlerts: vi.fn().mockResolvedValue([
-    {
-      id: 1,
-      location_id: 1,
-      satellite_name: "ISS (ZARYA)",
-      min_elevation: 20,
-      max_brightness: null,
-      enabled: true,
-    },
-  ]),
+  fetchAlertHistory: vi.fn().mockResolvedValue({
+    data: [
+      {
+        id: 11,
+        alert_id: 1,
+        pass_id: 9,
+        delivery_status: "delivered",
+        delivered_at: "2026-05-10T12:00:00Z",
+        message: "Pass alert delivered",
+      },
+    ],
+    count: 1,
+    skip: 0,
+    limit: 50,
+  }),
+  fetchAlerts: vi.fn().mockResolvedValue({
+    data: [
+      {
+        id: 1,
+        location_id: 1,
+        satellite_name: "ISS (ZARYA)",
+        min_elevation: 20,
+        max_brightness: null,
+        enabled: true,
+      },
+    ],
+    count: 1,
+    skip: 0,
+    limit: 50,
+  }),
   fetchLocation: vi.fn().mockResolvedValue({
     id: 1,
     name: "Mock Observatory",
@@ -53,27 +63,37 @@ vi.mock("../../api/client.js", () => ({
     longitude: -118.25,
     elevation_m: 90,
   }),
-  fetchLocations: vi.fn().mockResolvedValue([
-    {
-      id: 1,
-      name: "Mock Observatory",
-      latitude: 34.05,
-      longitude: -118.25,
-      elevation_m: 90,
-    },
-  ]),
-  fetchPasses: vi.fn().mockResolvedValue([
-    {
-      id: 101,
-      satellite_name: "ISS (ZARYA)",
-      rise_time: "2026-05-10T12:00:00Z",
-      culmination_time: "2026-05-10T12:04:00Z",
-      set_time: "2026-05-10T12:08:00Z",
-      max_elevation: 62,
-      brightness: -2.1,
-      pass_quality: "excellent",
-    },
-  ]),
+  fetchLocations: vi.fn().mockResolvedValue({
+    data: [
+      {
+        id: 1,
+        name: "Mock Observatory",
+        latitude: 34.05,
+        longitude: -118.25,
+        elevation_m: 90,
+      },
+    ],
+    count: 1,
+    skip: 0,
+    limit: 50,
+  }),
+  fetchPasses: vi.fn().mockResolvedValue({
+    data: [
+      {
+        id: 101,
+        satellite_name: "ISS (ZARYA)",
+        rise_time: "2026-05-10T12:00:00Z",
+        culmination_time: "2026-05-10T12:04:00Z",
+        set_time: "2026-05-10T12:08:00Z",
+        max_elevation: 62,
+        brightness: -2.1,
+        pass_quality: "excellent",
+      },
+    ],
+    count: 1,
+    skip: 0,
+    limit: 50,
+  }),
   getErrorMessage: (err, fallback = "Something went wrong.") =>
     err?.message || fallback,
   refreshPasses: vi.fn().mockResolvedValue({ message: "Pass refresh queued." }),

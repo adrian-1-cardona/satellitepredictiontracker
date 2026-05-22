@@ -47,7 +47,8 @@ export default function Dashboard() {
     setLoading(true);
     setError("");
     try {
-      const data = await fetchLocations();
+      const envelope = await fetchLocations();
+      const data = envelope.data;
       setLocations(data);
       if (data.length && !selectedLocationId) {
         setSelectedLocationId(data[0].id);

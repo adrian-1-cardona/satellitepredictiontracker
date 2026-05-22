@@ -1,3 +1,6 @@
+.env
+
+
 __pycache__/
 *.py[cod]
 .pytest_cache/
@@ -17,6 +20,7 @@ venv/
 .env
 .env.local
 .env.*.local
+.env
 
 *.db
 *.sqlite
@@ -27,3 +31,4 @@ data/*.tle
 .hypothesis/
 
 backend/.env
+backend/.pytest-compose/
