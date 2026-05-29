@@ -31,7 +31,7 @@ Start the backend stack:
 
 ```bash
 cd backend
-docker compose --env-file ../.env up --build
+docker compose --env.file ../.env up --build
 ```
 
 Start the frontend in a second terminal:
@@ -43,13 +43,11 @@ npm run dev
 ```
 
 Open:
-
-- Frontend: `http://localhost:3000`
-- Backend health: `http://localhost:8000/health`
-- Backend readiness: `http://localhost:8000/ready`
-- Metrics: `http://localhost:8000/metrics`
-- Grafana: `http://localhost:3001`
-- PgAdmin: `http://localhost:5050`
+Frontend: http://localhost:3000
+Backend API: http://localhost:8000/api/v1
+Backend health: http://localhost:8000/health
+Grafana: http://localhost:3001
+PgAdmin: http://localhost:5050
 
 Swagger UI, ReDoc, and the raw OpenAPI schema are intentionally disabled. `/docs`, `/redoc`, and `/openapi.json` return 404.
 
